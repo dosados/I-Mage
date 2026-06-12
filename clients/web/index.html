@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>I-Mage</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #0f1117;
+      --panel: #1a1d27;
+      --border: #2d3348;
+      --text: #e8eaf0;
+      --muted: #9aa3b8;
+      --accent: #6c8cff;
+      --accent-hover: #8aa4ff;
+      --danger: #ff6b6b;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+
+    main {
+      width: min(960px, 100%);
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.75rem;
+      font-weight: 600;
+    }
+
+    .subtitle {
+      margin: 0.25rem 0 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    input[type="text"],
+    input[type="number"] {
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--panel);
+      color: var(--text);
+      font-size: 1rem;
+    }
+
+    input[type="text"] {
+      flex: 1;
+    }
+
+    input[type="number"] {
+      width: 7rem;
+    }
+
+    .limit-field {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+      white-space: nowrap;
+    }
+
+    input[type="text"]:focus,
+    input[type="number"]:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+    }
+
+    button {
+      padding: 0.75rem 1.25rem;
+      border: none;
+      border-radius: 10px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    button:hover:not(:disabled) {
+      background: var(--accent-hover);
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.25rem;
+    }
+
+    .status {
+      color: var(--muted);
+      min-height: 1.25rem;
+    }
+
+    .status.error { color: var(--danger); }
+
+    .result {
+      display: none;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .result.visible { display: flex; }
+
+    .matches {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+
+    .matches.multi {
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    }
+
+    .match-card {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.15);
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1.5rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .meta strong { color: var(--text); }
+
+    .preview {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #000;
+      object-fit: contain;
+      max-height: 50vh;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 1rem;
+      height: 1rem;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: -0.15rem;
+      margin-right: 0.4rem;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>I-Mage</h1>
+      <p class="subtitle">Семантический поиск фото по описанию</p>
+    </header>
+
+    <form id="search-form">
+      <div class="form-row">
+        <input
+          id="query"
+          type="text"
+          placeholder="Например: кот на диване"
+          autocomplete="off"
+          required
+        >
+        <button type="submit" id="submit-btn">Найти</button>
+      </div>
+      <div class="form-row">
+        <label class="limit-field" for="limit">
+          Лимит фото
+          <input
+            id="limit"
+            type="number"
+            min="1"
+            value="100"
+            title="Сколько первых фото проверять. Оставьте пустым для поиска по всему каталогу."
+          >
+        </label>
+        <label class="limit-field" for="k">
+          Топ K
+          <input
+            id="k"
+            type="number"
+            min="1"
+            max="50"
+            value="5"
+            title="Сколько лучших совпадений вернуть и показать."
+          >
+        </label>
+      </div>
+    </form>
+
+    <div class="panel">
+      <div id="status" class="status">Введите запрос и нажмите «Найти».</div>
+
+      <div id="result" class="result">
+        <div id="matches" class="matches"></div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const form = document.getElementById("search-form");
+    const queryInput = document.getElementById("query");
+    const limitInput = document.getElementById("limit");
+    const kInput = document.getElementById("k");
+    const submitBtn = document.getElementById("submit-btn");
+    const statusEl = document.getElementById("status");
+    const resultEl = document.getElementById("result");
+    const matchesEl = document.getElementById("matches");
+
+    function setLoading(loading) {
+      submitBtn.disabled = loading;
+      queryInput.disabled = loading;
+      limitInput.disabled = loading;
+      kInput.disabled = loading;
+      if (loading) {
+        statusEl.className = "status";
+        statusEl.innerHTML = '<span class="spinner"></span>Ищем подходящее фото…';
+        resultEl.classList.remove("visible");
+      }
+    }
+
+    function showError(message) {
+      statusEl.className = "status error";
+      statusEl.textContent = message;
+      resultEl.classList.remove("visible");
+    }
+
+    function showResult(data) {
+      if (!Array.isArray(data.matches) || data.matches.length === 0) {
+        showError("Сервер не вернул совпадений.");
+        return;
+      }
+
+      statusEl.className = "status";
+      statusEl.textContent = `Топ ${data.matches.length}: лучшие совпадения по запросу «${data.query}».`;
+      matchesEl.innerHTML = "";
+      matchesEl.classList.toggle("multi", data.matches.length > 1);
+
+      data.matches.forEach((match, index) => {
+        const filename = match.path.split("/").pop();
+        const card = document.createElement("article");
+        card.className = "match-card";
+        card.innerHTML = `
+          <div class="meta">
+            <span>#<strong>${index + 1}</strong></span>
+            <span>Score: <strong>${match.score.toFixed(4)}</strong></span>
+            <span>Файл: <strong>${filename}</strong></span>
+          </div>
+          <img class="preview" alt="Результат ${index + 1}" src="/images/${encodeURIComponent(filename)}">
+        `;
+        matchesEl.appendChild(card);
+      });
+
+      resultEl.classList.add("visible");
+    }
+
+    if (window.location.protocol === "file:") {
+      showError("Откройте страницу через сервер: http://127.0.0.1:8000");
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const query = queryInput.value.trim();
+      if (!query) return;
+
+      const limitRaw = limitInput.value.trim();
+      const limit = limitRaw === "" ? null : Number(limitRaw);
+      if (limit !== null && (!Number.isInteger(limit) || limit < 1)) {
+        showError("Лимит должен быть целым числом ≥ 1 или пустым.");
+        return;
+      }
+
+      const k = Number(kInput.value);
+      if (!Number.isInteger(k) || k < 1 || k > 50) {
+        showError("Топ K должен быть целым числом от 1 до 50.");
+        return;
+      }
+
+      setLoading(true);
+
+      try {
+        const payload = { query, k };
+        if (limit !== null) {
+          payload.limit = limit;
+        }
+
+        const response = await fetch("/search", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          showError(data.detail || "Не удалось выполнить поиск.");
+          return;
+        }
+
+        showResult(data);
+      } catch {
+        showError("Ошибка сети. Убедитесь, что API-сервер запущен.");
+      } finally {
+        setLoading(false);
+      }
+    });
+  </script>
+</body>
+</html>
