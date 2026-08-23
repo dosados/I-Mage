@@ -22,21 +22,35 @@ env/
 .env
 .env.*
 
-# Data
+# Data & local stores
 data/*
 !data/.gitkeep
+*.db
+*.db-wal
+*.db-shm
+
+# Qdrant runtime marker (legacy embedded mode)
+.qdrant-initialized
 
 # ML / model caches
+artifacts/
 .cache/
 .huggingface/
 transformers_cache/
+runs/
 *.npz
 *.npy
 *.pkl
 *.pickle
+*.pt
+*.pth
+*.onnx
+*.safetensors
 
 # Cursor (keep shared project rules)
 .cursor/*
+!.cursor/rules/
+!.cursor/rules/**
 
 # IDE
 .vscode/

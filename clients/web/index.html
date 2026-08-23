@@ -49,15 +49,52 @@
       font-size: 0.95rem;
     }
 
-    form {
-      display: flex;
+    .mode-switch {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+      padding: 0.35rem;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--panel);
+    }
+
+    .mode-btn {
+      padding: 0.7rem 1rem;
+      border: none;
+      border-radius: 9px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .mode-btn:hover:not(.active) {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .mode-btn.active {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .search-form {
+      display: none;
       flex-direction: column;
       gap: 0.75rem;
+    }
+
+    .search-form.active {
+      display: flex;
     }
 
     .form-row {
       display: flex;
       gap: 0.75rem;
+      flex-wrap: wrap;
     }
 
     input[type="text"],
@@ -72,10 +109,106 @@
 
     input[type="text"] {
       flex: 1;
+      min-width: 12rem;
+    }
+
+    .class-picker {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      flex: 1 1 100%;
+    }
+
+    #class-label-input {
+      width: 100%;
+    }
+
+    .class-suggestions {
+      list-style: none;
+      margin: 0;
+      padding: 0.35rem;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--panel);
+      max-height: 12rem;
+      overflow-y: auto;
+    }
+
+    .class-suggestions:empty {
+      display: none;
+    }
+
+    .class-suggestion {
+      padding: 0.55rem 0.75rem;
+      border-radius: 8px;
+      cursor: pointer;
+      color: var(--text);
+    }
+
+    .class-suggestion:hover,
+    .class-suggestion.active {
+      background: rgba(108, 140, 255, 0.18);
+    }
+
+    .class-suggestion mark {
+      background: transparent;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .class-suggestions-empty {
+      padding: 0.55rem 0.75rem;
+      color: var(--muted);
+      font-size: 0.9rem;
     }
 
     input[type="number"] {
       width: 7rem;
+    }
+
+    input[type="file"] {
+      width: 100%;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .file-field {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .file-field-box {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      background: var(--panel);
+    }
+
+    .file-field-box input[type="file"] {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .face-preview {
+      width: 100%;
+      max-height: 240px;
+      object-fit: contain;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #000;
+      display: none;
+    }
+
+    .face-preview.visible {
+      display: block;
     }
 
     .limit-field {
@@ -87,13 +220,19 @@
       white-space: nowrap;
     }
 
+    .hint {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
     input[type="text"]:focus,
     input[type="number"]:focus {
       outline: 2px solid var(--accent);
       outline-offset: 1px;
     }
 
-    button {
+    button[type="submit"] {
       padding: 0.75rem 1.25rem;
       border: none;
       border-radius: 10px;
@@ -105,11 +244,11 @@
       white-space: nowrap;
     }
 
-    button:hover:not(:disabled) {
+    button[type="submit"]:hover:not(:disabled) {
       background: var(--accent-hover);
     }
 
-    button:disabled {
+    button[type="submit"]:disabled {
       opacity: 0.6;
       cursor: not-allowed;
     }
@@ -188,16 +327,517 @@
     }
 
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    .app-nav {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.5rem;
+      padding: 0.35rem;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--panel);
+    }
+
+    .section-btn {
+      padding: 0.65rem 0.75rem;
+      border: none;
+      border-radius: 9px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .section-btn.active {
+      background: rgba(108, 140, 255, 0.2);
+      color: var(--text);
+    }
+
+    .section-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .app-section { display: none; flex-direction: column; gap: 1rem; }
+    .app-section.active { display: flex; }
+
+    .panel h2 {
+      margin: 0 0 0.75rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .field-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin: 0.5rem 0 1rem;
+    }
+
+    .field-row {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .field-row input[type="text"] { flex: 1; }
+
+    .btn-secondary,
+    .btn-danger,
+    .btn-run {
+      padding: 0.55rem 0.9rem;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: transform 0.1s ease, background 0.15s ease, border-color 0.15s ease, box-shadow 0.1s ease;
+      user-select: none;
+    }
+
+    .btn-run {
+      background: rgba(108, 140, 255, 0.12);
+      border-color: rgba(108, 140, 255, 0.45);
+    }
+
+    .btn-secondary:hover:not(:disabled),
+    .btn-run:hover:not(:disabled) {
+      border-color: var(--accent);
+      background: rgba(108, 140, 255, 0.18);
+    }
+
+    .btn-secondary:active:not(:disabled),
+    .btn-run:active:not(:disabled),
+    .btn-danger:active:not(:disabled),
+    .btn-pressed {
+      transform: scale(0.97);
+      box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.35);
+    }
+
+    .btn-run.running,
+    .btn-secondary.running {
+      opacity: 0.75;
+      cursor: wait;
+    }
+
+    .btn-danger { color: var(--danger); border-color: rgba(255, 107, 107, 0.4); }
+
+    .checkbox-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .progress-block {
+      margin-top: 0.75rem;
+      padding: 0.85rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.12);
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+
+    .progress-block.running {
+      border-color: rgba(108, 140, 255, 0.45);
+      background: rgba(108, 140, 255, 0.06);
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .progress-label {
+      font-size: 0.85rem;
+      color: var(--muted);
+      min-height: 1.2rem;
+    }
+
+    .progress-label.running {
+      color: var(--text);
+    }
+
+    .progress-pct {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--accent);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 0.55rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+    }
+
+    .progress-bar > span {
+      display: block;
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+      width: 0%;
+      transition: width 0.35s ease;
+    }
+
+    .progress-bar.running > span {
+      animation: progress-pulse 1.4s ease-in-out infinite;
+    }
+
+    @keyframes progress-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.72; }
+    }
+
+    .steps {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.15rem;
+    }
+
+    .step {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
+    .step-track {
+      height: 0.28rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+    }
+
+    .step-track > span {
+      display: block;
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+      transition: width 0.35s ease;
+    }
+
+    .step-name {
+      font-size: 0.72rem;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .step.active .step-name { color: var(--text); font-weight: 600; }
+    .step.done .step-name { color: var(--accent); }
+    .step.active .step-track > span { animation: progress-pulse 1.4s ease-in-out infinite; }
+    .step.done .step-track > span { width: 100% !important; background: var(--accent); }
+
+    .step-name .step-icon {
+      width: 0.9rem;
+      text-align: center;
+      font-size: 0.75rem;
+    }
+
+    .people-panel {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .people-panel.disabled {
+      opacity: 0.55;
+      pointer-events: none;
+    }
+
+    .people-panel h3 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .people-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .person-card {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      background: rgba(0, 0, 0, 0.12);
+    }
+
+    .person-card.selected {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(108, 140, 255, 0.35);
+    }
+
+    .person-card img {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      border-radius: 8px;
+      background: #000;
+    }
+
+    .face-checklist {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      max-height: 14rem;
+      overflow-y: auto;
+      margin-top: 0.5rem;
+    }
+
+    .face-checklist label {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    /* Sub-switch внутри вкладки «Поиск человека» */
+    .sub-switch {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.4rem;
+      padding: 0.3rem;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.15);
+      margin-bottom: 0.25rem;
+    }
+
+    .sub-btn {
+      padding: 0.55rem 0.75rem;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .sub-btn:hover:not(.active) { color: var(--text); background: rgba(255,255,255,0.04); }
+    .sub-btn.active { background: var(--accent); color: #fff; }
+
+    .face-subview { display: none; flex-direction: column; gap: 0.75rem; }
+    .face-subview.active { display: flex; }
+
+    /* Трёхэтапный прогресс полного прогона */
+    .stages {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      margin-top: 0.35rem;
+    }
+
+    .stage {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      opacity: 0.5;
+      transition: opacity 0.2s ease;
+    }
+
+    .search-stages,
+    .work-stages {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      margin: 0.75rem 0 0.25rem;
+    }
+
+    /* Legacy single bar removed: work-stages cover full-run + search. */
+    .progress-block .index-bar {
+      display: none;
+    }
+
+    .progress-block.searching .work-stages {
+      display: flex;
+    }
+
+    .progress-block:not(.searching) .work-stages .stage[data-stage="index_gap"],
+    .progress-block:not(.searching) .work-stages .stage[data-stage="search"],
+    .progress-block:not(.searching) .work-stages .stage[data-stage="embed"] {
+      display: none;
+    }
+
+    .progress-block.searching .work-stages .stage[data-stage="indexing"] {
+      display: none;
+    }
+
+    .stage.active, .stage.done { opacity: 1; }
+
+    .stage-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 0.5rem;
+    }
+
+    .stage-title {
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .stage.active .stage-title { color: var(--text); font-weight: 600; }
+    .stage.done .stage-title { color: var(--accent); }
+
+    .stage-pct {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--accent);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stage .progress-bar > span { transition: width 0.35s ease; }
+    .stage.active .progress-bar > span { animation: progress-pulse 1.4s ease-in-out infinite; }
+    .stage.done .progress-bar > span { width: 100% !important; background: var(--accent); }
+
+    /* Indeterminate: a phase is working but has no reliable percent (disk scan,
+       DBSCAN). Slide a chunk so it's obviously alive, not frozen at 0%. */
+    .stage .progress-bar.indeterminate { overflow: hidden; }
+    .stage .progress-bar.indeterminate > span {
+      width: 35% !important;
+      animation: indet-slide 1.1s ease-in-out infinite;
+    }
+    @keyframes indet-slide {
+      0% { transform: translateX(-110%); }
+      100% { transform: translateX(320%); }
+    }
+
+    .run-summary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stage-counter {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .run-status-icon {
+      font-size: 1rem;
+      line-height: 1;
+      color: var(--muted);
+    }
+
+    .run-status-icon.done { color: #4ade80; }
+    .run-status-icon.running { color: var(--accent); }
+
+    #stages-faces[hidden] { display: none; }
+
+    /* Debug-группа лиц низкого качества */
+    .lowconf-block {
+      margin-top: 0.5rem;
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      padding: 0.4rem 0.75rem;
+      background: rgba(255, 107, 107, 0.05);
+    }
+
+    .lowconf-block > summary {
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 0.9rem;
+      padding: 0.35rem 0;
+      user-select: none;
+    }
+
+    .lowconf-block > summary::marker { color: var(--danger); }
+
+    .thumb-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 0.6rem;
+      margin-top: 0.6rem;
+    }
+
+    .thumb-card {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    .thumb-card img {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      border-radius: 8px;
+      background: #000;
+      border: 1px solid var(--border);
+    }
   </style>
 </head>
 <body>
   <main>
     <header>
       <h1>I-Mage</h1>
-      <p class="subtitle">Семантический поиск фото по описанию</p>
+      <p id="subtitle" class="subtitle">Семантический поиск фото по описанию</p>
     </header>
 
-    <form id="search-form">
+    <div class="app-nav" role="tablist" aria-label="Разделы">
+      <button type="button" class="section-btn active" data-section="search">Поиск</button>
+      <button type="button" class="section-btn" data-section="settings">Настройки</button>
+    </div>
+
+    <section id="search-section" class="app-section active">
+    <div class="mode-switch" role="tablist" aria-label="Режим поиска">
+      <button
+        type="button"
+        class="mode-btn active"
+        data-mode="description"
+        role="tab"
+        aria-selected="true"
+      >
+        По описанию
+      </button>
+      <button
+        type="button"
+        class="mode-btn"
+        data-mode="class"
+        role="tab"
+        aria-selected="false"
+      >
+        По объекту
+      </button>
+      <button
+        type="button"
+        class="mode-btn"
+        data-mode="face"
+        role="tab"
+        aria-selected="false"
+      >
+        Поиск человека
+      </button>
+    </div>
+
+    <form id="description-form" class="search-form active">
       <div class="form-row">
         <input
           id="query"
@@ -206,23 +846,24 @@
           autocomplete="off"
           required
         >
-        <button type="submit" id="submit-btn">Найти</button>
+        <button type="submit" id="description-submit">Найти</button>
       </div>
       <div class="form-row">
-        <label class="limit-field" for="limit">
+        <label class="limit-field" for="description-limit">
           Лимит фото
           <input
-            id="limit"
+            id="description-limit"
             type="number"
             min="1"
-            value="100"
+            value=""
+            placeholder="весь каталог"
             title="Сколько первых фото проверять. Оставьте пустым для поиска по всему каталогу."
           >
         </label>
-        <label class="limit-field" for="k">
+        <label class="limit-field" for="description-k">
           Топ K
           <input
-            id="k"
+            id="description-k"
             type="number"
             min="1"
             max="50"
@@ -231,35 +872,558 @@
           >
         </label>
       </div>
+      <div class="progress-block" id="progress-block-clip" data-module="clip">
+        <div class="progress-header">
+          <button type="button" class="btn-run" id="run-clip">Полный прогон CLIP</button>
+          <span class="progress-pct" id="progress-pct-clip">0%</span>
+        </div>
+        <div class="stages work-stages" id="stages-clip" hidden>
+          <div class="stage" data-stage="reconcile">
+            <div class="stage-head"><span class="stage-title">Сверка каталога</span><span class="stage-pct"></span></div>
+            <div class="progress-bar"><span></span></div>
+          </div>
+          <div class="stage" data-stage="index_gap">
+            <div class="stage-head"><span class="stage-title">Дозаполнение индекса</span><span class="stage-pct"></span></div>
+            <div class="progress-bar"><span></span></div>
+          </div>
+          <div class="stage" data-stage="search">
+            <div class="stage-head"><span class="stage-title">Поиск в индексе</span><span class="stage-pct"></span></div>
+            <div class="progress-bar"><span></span></div>
+          </div>
+          <div class="stage" data-stage="indexing">
+            <div class="stage-head"><span class="stage-title">Прогон модели</span><span class="stage-pct"></span></div>
+            <div class="progress-bar"><span></span></div>
+          </div>
+        </div>
+        <p class="progress-label" id="status-clip">Индексация не запускалась</p>
+      </div>
+    </form>
+
+    <form id="class-form" class="search-form">
+      <div class="form-row">
+        <div class="class-picker">
+          <input
+            id="class-label-input"
+            type="text"
+            placeholder="Например: dog"
+            autocomplete="off"
+            spellcheck="false"
+            required
+          >
+          <ul id="class-label-list" class="class-suggestions" role="listbox" aria-label="Классы COCO"></ul>
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="limit-field" for="class-limit">
+          Лимит поиска
+          <input
+            id="class-limit"
+            type="number"
+            min="1"
+            value=""
+            placeholder="весь каталог"
+            title="Сколько фото сканировать в каталоге. Пустое значение — весь каталог."
+          >
+        </label>
+        <label class="limit-field" for="class-k">
+          Показать не больше
+          <input
+            id="class-k"
+            type="number"
+            min="1"
+            max="50"
+            value="10"
+            title="Максимум совпадений для отображения."
+          >
+        </label>
+        <button type="submit" id="class-submit">Найти</button>
+      </div>
+      <p class="hint">Введите класс на английском (COCO) или выберите из списка. После полного прогона YOLO поиск только сверяет каталог и читает индекс.</p>
+      <div class="progress-block" id="progress-block-yolo" data-module="yolo">
+        <div class="progress-header">
+          <button type="button" class="btn-run" id="run-yolo">Полный прогон YOLO</button>
+          <span class="progress-pct" id="progress-pct-yolo">0%</span>
+        </div>
+        <div class="stages work-stages" id="stages-yolo" hidden>
+          <div class="stage" data-stage="reconcile">
+            <div class="stage-head"><span class="stage-title">Сверка каталога</span><span class="stage-pct"></span></div>
+            <div class="progress-bar"><span></span></div>
+          </div>
+          <div class="stage" data-stage="index_gap">
+            <div class="stage-head"><span class="stage-title">Дозаполнение индекса</span><span class="stage-pct"></span></div>
+            <div class="progress-bar"><span></span></div>
+          </div>
+          <div class="stage" data-stage="search">
+            <div class="stage-head"><span class="stage-title">Поиск в индексе</span><span class="stage-pct"></span></div>
+            <div class="progress-bar"><span></span></div>
+          </div>
+          <div class="stage" data-stage="indexing">
+            <div class="stage-head"><span class="stage-title">Прогон модели</span><span class="stage-pct"></span></div>
+            <div class="progress-bar"><span></span></div>
+          </div>
+        </div>
+        <p class="progress-label" id="status-yolo">Индексация не запускалась</p>
+      </div>
+    </form>
+
+    <form id="face-form" class="search-form">
+      <div class="sub-switch" role="tablist" aria-label="Режим поиска человека">
+        <button type="button" class="sub-btn active" data-sub="photo" role="tab" aria-selected="true">По фото</button>
+        <button type="button" class="sub-btn" data-sub="people" role="tab" aria-selected="false">Среди всех людей</button>
+      </div>
+
+      <div class="face-subview active" id="face-photo-view">
+      <div class="form-row">
+        <label class="file-field" for="face-file">
+          Фото человека
+          <span class="file-field-box">
+            <input
+              id="face-file"
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif,image/bmp"
+              required
+            >
+          </span>
+        </label>
+      </div>
+      <img id="face-preview" class="face-preview" alt="Загруженное фото человека">
+      <div class="form-row">
+        <label class="limit-field" for="face-limit">
+          Лимит фото
+          <input
+            id="face-limit"
+            type="number"
+            min="1"
+            value=""
+            placeholder="весь каталог"
+            title="Сколько фото брать в scope. Пустое значение — весь каталог (рекомендуется после полной индексации)."
+          >
+        </label>
+        <label class="limit-field" for="face-threshold">
+          Порог уверенности
+          <input
+            id="face-threshold"
+            type="number"
+            min="0"
+            max="1"
+            step="0.05"
+            value="0.4"
+            title="Минимальное косинусное сходство лиц. Чем выше — тем строже совпадения."
+          >
+        </label>
+        <label class="limit-field" for="face-k">
+          Показать не больше
+          <input
+            id="face-k"
+            type="number"
+            min="1"
+            max="50"
+            value="10"
+            title="Максимум фото для отображения."
+          >
+        </label>
+        <button type="submit" id="face-submit">Найти</button>
+      </div>
+      <div class="progress-block" id="progress-block-face-search" data-module="faces">
+        <div class="progress-header">
+          <span class="progress-label" id="status-face-search" style="margin:0;">Поиск по фото</span>
+          <span class="progress-pct" id="progress-pct-face-search"></span>
+        </div>
+        <div class="stages work-stages" id="stages-face-search" hidden>
+          <div class="stage" data-stage="embed">
+            <div class="stage-head"><span class="stage-title">Эмбеддинг запроса</span><span class="stage-pct"></span></div>
+            <div class="progress-bar"><span></span></div>
+          </div>
+          <div class="stage" data-stage="reconcile">
+            <div class="stage-head"><span class="stage-title">Сверка каталога</span><span class="stage-pct"></span></div>
+            <div class="progress-bar"><span></span></div>
+          </div>
+          <div class="stage" data-stage="index_gap">
+            <div class="stage-head"><span class="stage-title">Дозаполнение индекса</span><span class="stage-pct"></span></div>
+            <div class="progress-bar"><span></span></div>
+          </div>
+          <div class="stage" data-stage="search">
+            <div class="stage-head"><span class="stage-title">Поиск в индексе</span><span class="stage-pct"></span></div>
+            <div class="progress-bar"><span></span></div>
+          </div>
+        </div>
+      </div>
+      <p class="hint">Загрузите фото с лицом. После полного прогона Faces поиск только сверяет каталог и читает индекс — модель по всем фото не гоняется.</p>
+      </div>
+
+      <div class="face-subview" id="face-people-view">
+      <div class="progress-block" id="progress-block-faces" data-module="faces">
+        <div class="progress-header">
+          <button type="button" class="btn-run" id="run-faces">Полный прогон Faces</button>
+          <span class="run-summary">
+            <span class="stage-counter" id="faces-stage-counter">0/3</span>
+            <span class="run-status-icon" id="faces-status-icon" title="не выполнено">○</span>
+          </span>
+        </div>
+        <div class="stages" id="stages-faces" hidden>
+          <div class="stage" data-stage="reconcile">
+            <div class="stage-head">
+              <span class="stage-title">Сверка каталога</span>
+              <span class="stage-pct"></span>
+            </div>
+            <div class="progress-bar"><span></span></div>
+          </div>
+          <div class="stage" data-stage="indexing">
+            <div class="stage-head">
+              <span class="stage-title">Прогон модели</span>
+              <span class="stage-pct"></span>
+            </div>
+            <div class="progress-bar"><span></span></div>
+          </div>
+          <div class="stage" data-stage="clustering">
+            <div class="stage-head">
+              <span class="stage-title">Поиск людей</span>
+              <span class="stage-pct"></span>
+            </div>
+            <div class="progress-bar"><span></span></div>
+          </div>
+        </div>
+        <p class="progress-label" id="status-faces">Индексация не запускалась</p>
+      </div>
+
+      <div class="people-panel" id="people-panel">
+        <h3>Люди в базе</h3>
+        <p id="people-gate" class="hint">Сначала выполните полный прогон Faces.</p>
+        <div class="field-row" id="people-actions" style="display:none;">
+          <button type="button" class="btn-secondary" id="cluster-people">Найти людей</button>
+          <button type="button" class="btn-secondary" id="regroup-people">Перегруппировать</button>
+          <button type="button" class="btn-secondary" id="merge-people">Объединить выбранных</button>
+        </div>
+        <div id="people-status" class="status"></div>
+        <div id="people-grid" class="people-grid"></div>
+        <div id="person-detail" style="display:none;">
+          <h3 id="person-detail-title"></h3>
+          <div class="field-row">
+            <input id="person-name-input" type="text" placeholder="Имя человека">
+            <button type="button" class="btn-secondary" id="save-person-name">Сохранить имя</button>
+            <button type="button" class="btn-secondary" id="split-person-faces">Выделить в отдельного</button>
+          </div>
+          <div id="person-faces" class="thumb-grid"></div>
+        </div>
+
+        <details class="lowconf-block" id="lowconf-block">
+          <summary id="lowconf-summary">Лица с низким качеством (debug) — загрузка…</summary>
+          <p class="hint">Эти лица имеют низкий detection_score и не участвуют в группировке. Показаны для отладки, позже будут убраны из выдачи.</p>
+          <div id="lowconf-grid" class="thumb-grid"></div>
+        </details>
+      </div>
+      </div>
     </form>
 
     <div class="panel">
-      <div id="status" class="status">Введите запрос и нажмите «Найти».</div>
+      <div id="status" class="status">Выберите режим и нажмите «Найти».</div>
 
       <div id="result" class="result">
         <div id="matches" class="matches"></div>
       </div>
     </div>
+    </section>
+
+    <section id="settings-section" class="app-section panel">
+      <h2>Каталоги сканирования</h2>
+      <p class="hint">Пути используются для поиска, полного прогона и проверки готовности лиц.</p>
+      <div id="include-dirs" class="field-list"></div>
+      <div class="field-row">
+        <input id="new-include-dir" type="text" placeholder="/path/to/photos">
+        <button type="button" class="btn-secondary" id="add-include-dir">Добавить</button>
+      </div>
+
+      <h2>Исключения (glob)</h2>
+      <div id="ignore-globs" class="field-list"></div>
+      <div class="field-row">
+        <input id="new-ignore-glob" type="text" placeholder="**/thumbnails/**">
+        <button type="button" class="btn-secondary" id="add-ignore-glob">Добавить</button>
+      </div>
+
+      <h2>Фоновая переиндексация</h2>
+      <label class="checkbox-row">
+        <input type="checkbox" id="background-enabled">
+        Включить фоновый indexer
+      </label>
+      <div class="field-row">
+        <label class="limit-field" for="schedule-days">
+          Интервал (дней)
+          <input id="schedule-days" type="number" min="1" max="365" value="7">
+        </label>
+      </div>
+      <div class="checkbox-row" id="background-modules">
+        <label><input type="checkbox" value="yolo" checked> YOLO</label>
+        <label><input type="checkbox" value="clip" checked> CLIP</label>
+        <label><input type="checkbox" value="faces" checked> Faces</label>
+      </div>
+      <p id="background-status" class="hint">Фоновая переиндексация отключена.</p>
+      <button type="button" class="btn-secondary" id="save-settings">Сохранить настройки</button>
+      <div id="settings-status" class="status"></div>
+    </section>
   </main>
 
   <script>
-    const form = document.getElementById("search-form");
-    const queryInput = document.getElementById("query");
-    const limitInput = document.getElementById("limit");
-    const kInput = document.getElementById("k");
-    const submitBtn = document.getElementById("submit-btn");
+    const modeButtons = document.querySelectorAll(".mode-btn");
+    const subtitleEl = document.getElementById("subtitle");
+    const descriptionForm = document.getElementById("description-form");
+    const classForm = document.getElementById("class-form");
+    const faceForm = document.getElementById("face-form");
     const statusEl = document.getElementById("status");
     const resultEl = document.getElementById("result");
     const matchesEl = document.getElementById("matches");
 
+    const descriptionControls = [
+      document.getElementById("query"),
+      document.getElementById("description-limit"),
+      document.getElementById("description-k"),
+      document.getElementById("description-submit"),
+    ];
+
+    const classControls = [
+      document.getElementById("class-label-input"),
+      document.getElementById("class-limit"),
+      document.getElementById("class-k"),
+      document.getElementById("class-submit"),
+    ];
+
+    const faceControls = [
+      document.getElementById("face-file"),
+      document.getElementById("face-limit"),
+      document.getElementById("face-k"),
+      document.getElementById("face-threshold"),
+      document.getElementById("face-submit"),
+    ];
+
+    const faceFileInput = document.getElementById("face-file");
+    const facePreviewEl = document.getElementById("face-preview");
+
+    const classLabelInput = document.getElementById("class-label-input");
+    const classLabelList = document.getElementById("class-label-list");
+
+    const COCO_CLASSES = [
+      "person", "bicycle", "car", "motorcycle", "airplane", "bus", "train", "truck", "boat",
+      "traffic light", "fire hydrant", "stop sign", "parking meter", "bench", "bird", "cat",
+      "dog", "horse", "sheep", "cow", "elephant", "bear", "zebra", "giraffe", "backpack",
+      "umbrella", "handbag", "tie", "suitcase", "frisbee", "skis", "snowboard", "sports ball",
+      "kite", "baseball bat", "baseball glove", "skateboard", "surfboard", "tennis racket",
+      "bottle", "wine glass", "cup", "fork", "knife", "spoon", "bowl", "banana", "apple",
+      "sandwich", "orange", "broccoli", "carrot", "hot dog", "pizza", "donut", "cake", "chair",
+      "couch", "potted plant", "bed", "dining table", "toilet", "tv", "laptop", "mouse",
+      "remote", "keyboard", "cell phone", "microwave", "oven", "toaster", "sink",
+      "refrigerator", "book", "clock", "vase", "scissors", "teddy bear", "hair drier",
+      "toothbrush",
+    ];
+
+    let activeSuggestionIndex = -1;
+
+    function filterClasses(query) {
+      const normalized = query.trim().toLowerCase();
+      if (!normalized) return [...COCO_CLASSES];
+
+      const matches = COCO_CLASSES.filter((label) => label.includes(normalized));
+      return matches.sort((left, right) => {
+        const leftStarts = left.startsWith(normalized);
+        const rightStarts = right.startsWith(normalized);
+        if (leftStarts !== rightStarts) return leftStarts ? -1 : 1;
+        return left.localeCompare(right);
+      });
+    }
+
+    function findExactClassLabel(value) {
+      const raw = value.trim();
+      if (!raw) return null;
+      return COCO_CLASSES.find((label) => label.toLowerCase() === raw.toLowerCase()) ?? null;
+    }
+
+    function highlightMatch(label, query) {
+      const normalized = query.trim().toLowerCase();
+      if (!normalized) return label;
+
+      const index = label.toLowerCase().indexOf(normalized);
+      if (index === -1) return label;
+
+      const before = label.slice(0, index);
+      const match = label.slice(index, index + normalized.length);
+      const after = label.slice(index + normalized.length);
+      return `${before}<mark>${match}</mark>${after}`;
+    }
+
+    function renderClassSuggestions() {
+      const query = classLabelInput.value;
+      classLabelList.innerHTML = "";
+      activeSuggestionIndex = -1;
+
+      if (findExactClassLabel(query)) {
+        return;
+      }
+
+      const matches = filterClasses(query);
+
+      if (matches.length === 0) {
+        const emptyItem = document.createElement("li");
+        emptyItem.className = "class-suggestions-empty";
+        emptyItem.textContent = "Нет подходящих классов";
+        classLabelList.appendChild(emptyItem);
+        return;
+      }
+
+      matches.forEach((label, index) => {
+        const item = document.createElement("li");
+        item.className = "class-suggestion";
+        item.role = "option";
+        item.dataset.label = label;
+        item.innerHTML = highlightMatch(label, query);
+        item.addEventListener("mousedown", (event) => {
+          event.preventDefault();
+          selectClassLabel(label);
+        });
+        item.addEventListener("mouseenter", () => {
+          setActiveSuggestion(index);
+        });
+        classLabelList.appendChild(item);
+      });
+    }
+
+    function setActiveSuggestion(index) {
+      const items = classLabelList.querySelectorAll(".class-suggestion");
+      activeSuggestionIndex = index;
+      items.forEach((item, itemIndex) => {
+        item.classList.toggle("active", itemIndex === index);
+      });
+    }
+
+    function selectClassLabel(label) {
+      classLabelInput.value = label;
+      renderClassSuggestions();
+    }
+
+    function resolveClassLabel() {
+      const raw = classLabelInput.value.trim();
+      if (!raw) return "";
+
+      const exact = findExactClassLabel(raw);
+      if (exact) return exact;
+
+      const matches = filterClasses(raw);
+      if (matches.length === 1) return matches[0];
+
+      throw new Error("Выберите класс из списка или введите точное название COCO.");
+    }
+
+    classLabelInput.addEventListener("input", renderClassSuggestions);
+    classLabelInput.addEventListener("focus", () => {
+      if (!findExactClassLabel(classLabelInput.value)) {
+        renderClassSuggestions();
+      }
+    });
+
+    classLabelInput.addEventListener("keydown", (event) => {
+      const items = classLabelList.querySelectorAll(".class-suggestion");
+      if (items.length === 0) return;
+
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        const nextIndex = activeSuggestionIndex < items.length - 1 ? activeSuggestionIndex + 1 : 0;
+        setActiveSuggestion(nextIndex);
+        items[nextIndex].scrollIntoView({ block: "nearest" });
+        return;
+      }
+
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        const nextIndex = activeSuggestionIndex > 0 ? activeSuggestionIndex - 1 : items.length - 1;
+        setActiveSuggestion(nextIndex);
+        items[nextIndex].scrollIntoView({ block: "nearest" });
+        return;
+      }
+
+      if (event.key === "Enter" && activeSuggestionIndex >= 0) {
+        event.preventDefault();
+        selectClassLabel(items[activeSuggestionIndex].dataset.label);
+      }
+    });
+
+    if (!findExactClassLabel(classLabelInput.value)) {
+      renderClassSuggestions();
+    }
+
+    let currentMode = "description";
+
+    const subtitles = {
+      description: "Семантический поиск фото по описанию",
+      class: "Поиск фото, на которых есть выбранный объект",
+      face: "Поиск человека, разметка и группировка лиц",
+    };
+
+    const idleMessages = {
+      description: "Введите описание и нажмите «Найти».",
+      class: "Введите класс объекта или выберите из списка и нажмите «Найти».",
+      face: "Загрузите фото человека и нажмите «Найти».",
+    };
+
+    const loadingMessages = {
+      description: "Ищем подходящие фото по описанию…",
+      class: "Сканируем фото и ищем выбранный объект…",
+      face: "Строим эмбеддинг лица и ищем фотографии этого человека…",
+    };
+
+    function setMode(mode) {
+      currentMode = mode;
+      modeButtons.forEach((button) => {
+        const isActive = button.dataset.mode === mode;
+        button.classList.toggle("active", isActive);
+        button.setAttribute("aria-selected", String(isActive));
+      });
+      descriptionForm.classList.toggle("active", mode === "description");
+      classForm.classList.toggle("active", mode === "class");
+      faceForm.classList.toggle("active", mode === "face");
+      subtitleEl.textContent = subtitles[mode];
+      statusEl.className = "status";
+      statusEl.textContent = idleMessages[mode];
+      resultEl.classList.remove("visible");
+      if (mode === "face") {
+        applyFaceSub(faceSub);
+      }
+    }
+
+    let faceSub = "photo";
+    const faceSubButtons = document.querySelectorAll(".sub-btn");
+    const facePhotoView = document.getElementById("face-photo-view");
+    const facePeopleView = document.getElementById("face-people-view");
+
+    function applyFaceSub(sub) {
+      faceSub = sub;
+      faceSubButtons.forEach((button) => {
+        const isActive = button.dataset.sub === sub;
+        button.classList.toggle("active", isActive);
+        button.setAttribute("aria-selected", String(isActive));
+      });
+      facePhotoView.classList.toggle("active", sub === "photo");
+      facePeopleView.classList.toggle("active", sub === "people");
+      if (sub === "people") {
+        loadPeople();
+        refreshFacesReady();
+      }
+    }
+
+    faceSubButtons.forEach((button) => {
+      button.addEventListener("click", () => applyFaceSub(button.dataset.sub));
+    });
+
     function setLoading(loading) {
-      submitBtn.disabled = loading;
-      queryInput.disabled = loading;
-      limitInput.disabled = loading;
-      kInput.disabled = loading;
+      const controlsByMode = {
+        description: descriptionControls,
+        class: classControls,
+        face: faceControls,
+      };
+      const controls = controlsByMode[currentMode] ?? descriptionControls;
+      controls.forEach((control) => {
+        control.disabled = loading;
+      });
+
       if (loading) {
         statusEl.className = "status";
-        statusEl.innerHTML = '<span class="spinner"></span>Ищем подходящее фото…';
+        statusEl.innerHTML = `<span class="spinner"></span>${loadingMessages[currentMode]}`;
         resultEl.classList.remove("visible");
       }
     }
@@ -270,25 +1434,50 @@
       resultEl.classList.remove("visible");
     }
 
-    function showResult(data) {
-      if (!Array.isArray(data.matches) || data.matches.length === 0) {
+    function parseOptionalLimit(input) {
+      const raw = input.value.trim();
+      if (raw === "") return null;
+      const value = Number(raw);
+      if (!Number.isInteger(value) || value < 1) {
+        throw new Error("Лимит поиска должен быть целым числом ≥ 1 или пустым.");
+      }
+      return value;
+    }
+
+    function parseK(input, label) {
+      const value = Number(input.value);
+      if (!Number.isInteger(value) || value < 1 || value > 50) {
+        throw new Error(`${label} должен быть целым числом от 1 до 50.`);
+      }
+      return value;
+    }
+
+    function showMatches({ title, matches, metricLabel, getMetric }) {
+      if (!Array.isArray(matches)) {
         showError("Сервер не вернул совпадений.");
+        return;
+      }
+      if (matches.length === 0) {
+        statusEl.className = "status";
+        statusEl.textContent = title || "Совпадений не найдено.";
+        resultEl.classList.remove("visible");
+        matchesEl.innerHTML = "";
         return;
       }
 
       statusEl.className = "status";
-      statusEl.textContent = `Топ ${data.matches.length}: лучшие совпадения по запросу «${data.query}».`;
+      statusEl.textContent = title;
       matchesEl.innerHTML = "";
-      matchesEl.classList.toggle("multi", data.matches.length > 1);
+      matchesEl.classList.toggle("multi", matches.length > 1);
 
-      data.matches.forEach((match, index) => {
+      matches.forEach((match, index) => {
         const filename = match.path.split("/").pop();
         const card = document.createElement("article");
         card.className = "match-card";
         card.innerHTML = `
           <div class="meta">
             <span>#<strong>${index + 1}</strong></span>
-            <span>Score: <strong>${match.score.toFixed(4)}</strong></span>
+            <span>${metricLabel}: <strong>${getMetric(match).toFixed(4)}</strong></span>
             <span>Файл: <strong>${filename}</strong></span>
           </div>
           <img class="preview" alt="Результат ${index + 1}" src="/images/${encodeURIComponent(filename)}">
@@ -299,54 +1488,1030 @@
       resultEl.classList.add("visible");
     }
 
+    function parseThreshold(input) {
+      const value = Number(input.value);
+      if (Number.isNaN(value) || value < 0 || value > 1) {
+        throw new Error("Порог уверенности должен быть числом от 0 до 1.");
+      }
+      return value;
+    }
+
+    faceFileInput.addEventListener("change", () => {
+      const file = faceFileInput.files?.[0];
+      if (!file) {
+        facePreviewEl.classList.remove("visible");
+        facePreviewEl.removeAttribute("src");
+        return;
+      }
+
+      const objectUrl = URL.createObjectURL(file);
+      facePreviewEl.src = objectUrl;
+      facePreviewEl.classList.add("visible");
+      facePreviewEl.onload = () => URL.revokeObjectURL(objectUrl);
+    });
+
+    async function runFaceSearch(file, limit, k, threshold) {
+      setLoading(true);
+      const stagesEl = document.getElementById("stages-face-search");
+      const block = document.getElementById("progress-block-face-search");
+      const stageNames = ["embed", "reconcile", "index_gap", "search"];
+      beginWorkStages(block, stagesEl, stageNames);
+      setWorkStage(stagesEl, stageNames, "embed", "active");
+
+      try {
+        const embedFormData = new FormData();
+        embedFormData.append("file", file);
+        const embedResponse = await fetch("/search/face/embed", {
+          method: "POST",
+          body: embedFormData,
+        });
+        const embedData = await embedResponse.json().catch(() => ({}));
+        if (!embedResponse.ok) {
+          showError(embedData.detail || "Не удалось построить эмбеддинг лица.");
+          return;
+        }
+        setWorkStage(stagesEl, stageNames, "embed", "done");
+
+        const payload = { embedding: embedData.embedding, k, threshold };
+        if (limit !== null) payload.limit = limit;
+
+        const { matches, errorDetail } = await consumeSearchStream(
+          "/search/face/stream",
+          payload,
+          stagesEl,
+          stageNames,
+        );
+        if (errorDetail) {
+          showError(errorDetail);
+          return;
+        }
+        showMatches({
+          title: matches && matches.length
+            ? `Найдено до ${k} фото с похожим человеком (порог ${threshold.toFixed(2)}).`
+            : `Совпадений выше порога ${threshold.toFixed(2)} нет. Попробуйте снизить порог.`,
+          matches: matches || [],
+          metricLabel: "Сходство",
+          getMetric: (match) => match.score,
+        });
+      } catch (error) {
+        if (error instanceof Error && error.message) showError(error.message);
+        else showError("Ошибка сети. Убедитесь, что API-сервер запущен.");
+      } finally {
+        endWorkStages(block);
+        setLoading(false);
+      }
+    }
+
+    function beginWorkStages(block, stagesEl, stageNames) {
+      if (block) block.classList.add("searching", "running");
+      if (!stagesEl) return;
+      stagesEl.hidden = false;
+      stageNames.forEach((name) => {
+        const el = stagesEl.querySelector(`.stage[data-stage="${name}"]`);
+        if (!el) return;
+        el.hidden = false;
+        el.classList.remove("active", "done");
+        const fill = el.querySelector(".progress-bar > span");
+        const pct = el.querySelector(".stage-pct");
+        const bar = el.querySelector(".progress-bar");
+        if (fill) fill.style.width = "0%";
+        if (pct) pct.textContent = "";
+        if (bar) bar.classList.remove("indeterminate");
+      });
+      // Hide stages that are not part of this run.
+      stagesEl.querySelectorAll(".stage").forEach((el) => {
+        const name = el.dataset.stage;
+        if (name && !stageNames.includes(name)) el.hidden = true;
+      });
+    }
+
+    function setWorkStage(stagesEl, stageNames, name, state, detail) {
+      if (!stagesEl) return;
+      const idx = stageNames.indexOf(name);
+      stageNames.forEach((stageName, i) => {
+        const el = stagesEl.querySelector(`.stage[data-stage="${stageName}"]`);
+        if (!el || el.hidden) return;
+        const fill = el.querySelector(".progress-bar > span");
+        const pct = el.querySelector(".stage-pct");
+        const bar = el.querySelector(".progress-bar");
+        let stageState = "pending";
+        if (i < idx) stageState = "done";
+        else if (i === idx) stageState = state;
+        el.classList.toggle("active", stageState === "active");
+        el.classList.toggle("done", stageState === "done");
+        const indeterminate = stageState === "active";
+        if (bar) bar.classList.toggle("indeterminate", indeterminate);
+        if (fill) fill.style.width = stageState === "done" || indeterminate ? "100%" : "0%";
+        if (pct) {
+          if (stageState === "done") pct.textContent = detail && i === idx ? detail : "✓";
+          else if (stageState === "active") pct.textContent = detail || "…";
+          else pct.textContent = "";
+        }
+      });
+    }
+
+    function endWorkStages(block) {
+      if (block) block.classList.remove("searching", "running");
+    }
+
+    function applyStreamEvent(stagesEl, stageNames, event) {
+      if (!event || !event.stage) return;
+      if (event.stage === "error" || event.stage === "done") return;
+      if (event.status === "running" || event.status === "indexing") {
+        let detail = "…";
+        if (event.stage === "reconcile" && event.total) detail = `${event.total}`;
+        if (event.stage === "index_gap" && event.gap != null) {
+          detail = event.gap ? `${event.gap} новых` : "нет дыр";
+        }
+        setWorkStage(stagesEl, stageNames, event.stage, "active", detail);
+      } else if (event.status === "done") {
+        let detail = "✓";
+        if (event.stage === "reconcile" && event.total != null) detail = String(event.total);
+        if (event.stage === "index_gap") detail = event.gap ? `+${event.gap}` : "0";
+        if (event.stage === "search" && event.matches != null) detail = String(event.matches);
+        setWorkStage(stagesEl, stageNames, event.stage, "done", detail);
+      }
+    }
+
+    async function consumeSearchStream(url, payload, stagesEl, stageNames) {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok || !response.body) {
+        const err = await response.json().catch(() => ({}));
+        return { matches: null, errorDetail: err.detail || "Не удалось выполнить поиск." };
+      }
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let matches = null;
+      let errorDetail = null;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          let event;
+          try {
+            event = JSON.parse(line);
+          } catch {
+            continue;
+          }
+          if (event.stage === "error") {
+            errorDetail = event.detail || "Ошибка поиска";
+            continue;
+          }
+          if (event.stage === "done") {
+            stageNames.forEach((name) => setWorkStage(stagesEl, stageNames, name, "done"));
+            matches = event.matches || [];
+            continue;
+          }
+          applyStreamEvent(stagesEl, stageNames, event);
+        }
+      }
+      return { matches, errorDetail };
+    }
+
+    async function runStreamSearch({
+      module,
+      url,
+      payload,
+      title,
+      emptyTitle,
+      metricLabel,
+      getMetric,
+    }) {
+      const block = document.getElementById(`progress-block-${module}`);
+      const stagesEl = document.getElementById(`stages-${module}`);
+      const stageNames = ["reconcile", "index_gap", "search"];
+      setLoading(true);
+      beginWorkStages(block, stagesEl, stageNames);
+      const label = document.getElementById(`status-${module}`);
+      if (label) {
+        label.classList.add("running");
+        label.textContent = "Поиск…";
+      }
+      try {
+        const { matches, errorDetail } = await consumeSearchStream(
+          url,
+          payload,
+          stagesEl,
+          stageNames,
+        );
+        if (errorDetail) {
+          showError(errorDetail);
+          return;
+        }
+        const list = matches || [];
+        showMatches({
+          title: list.length ? title : (emptyTitle || "Совпадений не найдено."),
+          matches: list,
+          metricLabel,
+          getMetric,
+        });
+        if (label) {
+          label.classList.remove("running");
+          label.textContent = list.length
+            ? `Поиск: ${list.length} совпадений`
+            : "Поиск: совпадений нет";
+        }
+      } catch (error) {
+        if (error instanceof Error && error.message) showError(error.message);
+        else showError("Ошибка сети. Убедитесь, что API-сервер запущен.");
+      } finally {
+        endWorkStages(block);
+        setLoading(false);
+      }
+    }
+
+    modeButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        setMode(button.dataset.mode);
+      });
+    });
+
     if (window.location.protocol === "file:") {
       showError("Откройте страницу через сервер: http://127.0.0.1:8000");
     }
 
-    form.addEventListener("submit", async (event) => {
+    descriptionForm.addEventListener("submit", async (event) => {
       event.preventDefault();
-      const query = queryInput.value.trim();
+      setMode("description");
+
+      const query = document.getElementById("query").value.trim();
       if (!query) return;
 
-      const limitRaw = limitInput.value.trim();
-      const limit = limitRaw === "" ? null : Number(limitRaw);
-      if (limit !== null && (!Number.isInteger(limit) || limit < 1)) {
-        showError("Лимит должен быть целым числом ≥ 1 или пустым.");
-        return;
-      }
+      try {
+        const limit = parseOptionalLimit(document.getElementById("description-limit"));
+        const k = parseK(document.getElementById("description-k"), "Топ K");
+        const payload = { query, k };
+        if (limit !== null) payload.limit = limit;
 
-      const k = Number(kInput.value);
-      if (!Number.isInteger(k) || k < 1 || k > 50) {
-        showError("Топ K должен быть целым числом от 1 до 50.");
-        return;
+        await runStreamSearch({
+          module: "clip",
+          url: "/search/stream",
+          payload,
+          title: `Топ ${k}: лучшие совпадения по запросу «${query}».`,
+          emptyTitle: `По запросу «${query}» совпадений нет.`,
+          metricLabel: "Score",
+          getMetric: (match) => match.score,
+        });
+      } catch (error) {
+        showError(error.message);
       }
+    });
 
-      setLoading(true);
+    classForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      setMode("class");
+
+      const label = resolveClassLabel();
+      if (!label) return;
 
       try {
-        const payload = { query, k };
-        if (limit !== null) {
-          payload.limit = limit;
-        }
+        const limit = parseOptionalLimit(document.getElementById("class-limit"));
+        const k = parseK(document.getElementById("class-k"), "Лимит отображения");
+        const payload = { label, k };
+        if (limit !== null) payload.limit = limit;
 
-        const response = await fetch("/search", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+        await runStreamSearch({
+          module: "yolo",
+          url: "/search/class/stream",
+          payload,
+          title: `Найдено до ${k} фото с объектом «${label}».`,
+          emptyTitle: `Объект «${label}» не найден в индексе.`,
+          metricLabel: "Confidence",
+          getMetric: (match) => match.confidence,
         });
+      } catch (error) {
+        showError(error.message);
+      }
+    });
 
-        const data = await response.json().catch(() => ({}));
+    faceForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      setMode("face");
 
-        if (!response.ok) {
-          showError(data.detail || "Не удалось выполнить поиск.");
+      const file = faceFileInput.files?.[0];
+      if (!file) return;
+
+      try {
+        const limit = parseOptionalLimit(document.getElementById("face-limit"));
+        const k = parseK(document.getElementById("face-k"), "Максимум фото для отображения");
+        const threshold = parseThreshold(document.getElementById("face-threshold"));
+        await runFaceSearch(file, limit, k, threshold);
+      } catch (error) {
+        showError(error.message);
+      }
+    });
+
+    const sectionButtons = document.querySelectorAll(".section-btn");
+    const sections = {
+      search: document.getElementById("search-section"),
+      settings: document.getElementById("settings-section"),
+    };
+
+    const INDEX_MODULES = ["yolo", "clip", "faces"];
+
+    function flashPress(button) {
+      if (!button || button.disabled) return;
+      button.classList.add("btn-pressed");
+      setTimeout(() => button.classList.remove("btn-pressed"), 150);
+    }
+
+    function bindPressEffect(selector) {
+      document.querySelectorAll(selector).forEach((button) => {
+        button.addEventListener("mousedown", () => flashPress(button));
+      });
+    }
+    bindPressEffect(".btn-run, .btn-secondary, .btn-danger, button[type='submit']");
+
+    let scanConfig = {
+      include_directories: [],
+      ignore_globs: [],
+      background_indexer_enabled: false,
+      schedule_interval_days: 7,
+      background_modules: ["yolo", "clip", "faces"],
+    };
+    let selectedPeople = new Set();
+    let activePersonId = null;
+
+    function setAppSection(name) {
+      sectionButtons.forEach((button) => {
+        button.classList.toggle("active", button.dataset.section === name);
+      });
+      Object.entries(sections).forEach(([key, section]) => {
+        section.classList.toggle("active", key === name);
+      });
+    }
+
+    sectionButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        if (button.disabled) return;
+        setAppSection(button.dataset.section);
+        if (button.dataset.section === "settings") loadScanSettings();
+      });
+    });
+
+    function renderStringList(container, items, onRemove) {
+      container.innerHTML = "";
+      items.forEach((item, index) => {
+        const row = document.createElement("div");
+        row.className = "field-row";
+        row.innerHTML = `<input type="text" value="${item}" readonly>`;
+        const removeBtn = document.createElement("button");
+        removeBtn.type = "button";
+        removeBtn.className = "btn-danger";
+        removeBtn.textContent = "Удалить";
+        removeBtn.addEventListener("click", () => onRemove(index));
+        row.appendChild(removeBtn);
+        container.appendChild(row);
+      });
+    }
+
+    function renderIncludeDirs() {
+      renderStringList(
+        document.getElementById("include-dirs"),
+        scanConfig.include_directories,
+        (index) => {
+          scanConfig.include_directories.splice(index, 1);
+          renderIncludeDirs();
+        },
+      );
+    }
+
+    function renderIgnoreGlobs() {
+      renderStringList(
+        document.getElementById("ignore-globs"),
+        scanConfig.ignore_globs,
+        (index) => {
+          scanConfig.ignore_globs.splice(index, 1);
+          renderIgnoreGlobs();
+        },
+      );
+    }
+
+    async function loadScanSettings() {
+      const response = await fetch("/settings/scan");
+      const data = await response.json();
+      if (!response.ok) return;
+      scanConfig = data;
+      renderIncludeDirs();
+      renderIgnoreGlobs();
+      document.getElementById("background-enabled").checked = scanConfig.background_indexer_enabled;
+      document.getElementById("schedule-days").value = String(scanConfig.schedule_interval_days);
+      document.querySelectorAll("#background-modules input").forEach((input) => {
+        input.checked = scanConfig.background_modules.includes(input.value);
+      });
+      await refreshBackgroundStatus();
+    }
+
+    document.getElementById("add-include-dir").addEventListener("click", () => {
+      const value = document.getElementById("new-include-dir").value.trim();
+      if (!value) return;
+      scanConfig.include_directories.push(value);
+      document.getElementById("new-include-dir").value = "";
+      renderIncludeDirs();
+    });
+
+    document.getElementById("add-ignore-glob").addEventListener("click", () => {
+      const value = document.getElementById("new-ignore-glob").value.trim();
+      if (!value) return;
+      scanConfig.ignore_globs.push(value);
+      document.getElementById("new-ignore-glob").value = "";
+      renderIgnoreGlobs();
+    });
+
+    document.getElementById("save-settings").addEventListener("click", async () => {
+      const statusEl = document.getElementById("settings-status");
+      const modules = [...document.querySelectorAll("#background-modules input:checked")].map(
+        (input) => input.value,
+      );
+      const payload = {
+        include_directories: scanConfig.include_directories,
+        ignore_globs: scanConfig.ignore_globs,
+        background_indexer_enabled: document.getElementById("background-enabled").checked,
+        schedule_interval_days: Number(document.getElementById("schedule-days").value),
+        background_modules: modules,
+      };
+      const response = await fetch("/settings/scan", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        statusEl.className = "status error";
+        statusEl.textContent = data.detail || "Не удалось сохранить настройки.";
+        return;
+      }
+      scanConfig = data;
+      statusEl.className = "status";
+      statusEl.textContent = "Настройки сохранены.";
+      await refreshBackgroundStatus();
+      await refreshFacesReady();
+    });
+
+    async function refreshBackgroundStatus() {
+      const response = await fetch("/index/status");
+      const data = await response.json().catch(() => ({}));
+      const el = document.getElementById("background-status");
+      if (!response.ok || !data.background) {
+        el.textContent = "Не удалось получить статус фонового indexer.";
+        return;
+      }
+      if (!data.background.enabled) {
+        el.textContent = "Фоновая переиндексация отключена.";
+        return;
+      }
+      el.textContent = data.background.next_run_at
+        ? `Включена. Следующий запуск: ${data.background.next_run_at}`
+        : "Включена. Ожидает первого запуска.";
+    }
+
+    let facesRunOpened = false;
+
+    function setStage(stagesEl, name, state, value) {
+      // value: a number 0..100 for a real percent, or null = indeterminate.
+      const el = stagesEl.querySelector(`.stage[data-stage="${name}"]`);
+      if (!el) return;
+      el.classList.toggle("active", state === "active");
+      el.classList.toggle("done", state === "done");
+      const bar = el.querySelector(".progress-bar");
+      const fill = el.querySelector(".progress-bar > span");
+      const indeterminate = state === "active" && value == null;
+      if (bar) bar.classList.toggle("indeterminate", indeterminate);
+      if (fill) {
+        if (state === "done" || indeterminate) fill.style.width = "100%";
+        else fill.style.width = `${value || 0}%`;
+      }
+      const pctEl = el.querySelector(".stage-pct");
+      if (pctEl) {
+        if (state === "done") pctEl.textContent = "✓";
+        else if (state === "active") pctEl.textContent = indeterminate ? "…" : `${value}%`;
+        else pctEl.textContent = "";
+      }
+    }
+
+    function updateFacesStages(run) {
+      const stagesEl = document.getElementById("stages-faces");
+      if (!stagesEl) return;
+
+      // All three bars are driven purely by the persisted run phase/status, so
+      // they stay monotonic within a run and survive page reloads. Phases:
+      // reconcile -> indexing -> clustering -> done (one index_runs row).
+      // Each stage: state ("pending"|"active"|"done") + value (number %, or null
+      // for indeterminate "working…"). Disk scan and DBSCAN have no honest %, so
+      // they animate as indeterminate instead of sitting frozen at 0/50.
+      let reconcile = "pending", recVal = 0;
+      let indexing = "pending", idxVal = 0;
+      let clustering = "pending", cluVal = null;
+
+      const phase = run?.phase;
+      const status = run?.status;
+      const hasTotal = run && run.progress_total > 0;
+      const pct = hasTotal
+        ? Math.min(100, Math.round((run.progress_done / run.progress_total) * 100))
+        : (typeof run?.percent === "number" ? run.percent : 0);
+
+      let label = "Индексация не запускалась";
+
+      if (run && status === "running") {
+        if (phase === "pending" || phase === "reconcile") {
+          reconcile = "active";
+          recVal = hasTotal ? pct : null;
+          label = hasTotal
+            ? `Сверка каталога: ${run.progress_done} / ${run.progress_total}`
+            : "Сверка каталога…";
+        } else if (phase === "indexing") {
+          reconcile = "done";
+          indexing = "active";
+          idxVal = pct;
+          label = `Прогон модели (GPU): ${run.progress_done} / ${run.progress_total}`;
+        } else if (phase === "clustering") {
+          reconcile = "done";
+          indexing = "done";
+          clustering = "active";
+          cluVal = null; // coarse/blocking → indeterminate
+          label = "Поиск людей (кластеризация)…";
+        }
+      } else if (run && status === "done") {
+        reconcile = "done"; indexing = "done"; clustering = "done";
+        label = run.last_error ? run.last_error : "Готово";
+      } else if (run && status === "failed") {
+        if (phase === "indexing") reconcile = "done";
+        else if (phase === "clustering") { reconcile = "done"; indexing = "done"; }
+        label = `Ошибка: ${run.last_error || "неизвестно"}`;
+      }
+
+      setStage(stagesEl, "reconcile", reconcile, recVal);
+      setStage(stagesEl, "indexing", indexing, idxVal);
+      setStage(stagesEl, "clustering", clustering, cluVal);
+
+      const labelEl = document.getElementById("status-faces");
+      if (labelEl) labelEl.textContent = label;
+
+      const doneCount =
+        (reconcile === "done") + (indexing === "done") + (clustering === "done");
+      const counterEl = document.getElementById("faces-stage-counter");
+      if (counterEl) counterEl.textContent = `${doneCount}/3`;
+
+      const isRunning = status === "running";
+      const iconEl = document.getElementById("faces-status-icon");
+      if (iconEl) {
+        iconEl.classList.toggle("done", doneCount === 3);
+        iconEl.classList.toggle("running", isRunning && doneCount < 3);
+        if (doneCount === 3) { iconEl.textContent = "✓"; iconEl.title = "выполнено"; }
+        else if (isRunning) { iconEl.textContent = "●"; iconEl.title = "выполняется"; }
+        else { iconEl.textContent = "○"; iconEl.title = "не выполнено"; }
+      }
+
+      // Show the stages whenever a run exists (so the last state survives reload),
+      // or once the user has opened/started one.
+      stagesEl.hidden = !(run || facesRunOpened);
+    }
+
+    function updateModuleProgress(module, statusData) {
+      const run = statusData.active_run?.module === module
+        ? statusData.active_run
+        : statusData.latest_run?.module === module
+          ? statusData.latest_run
+          : null;
+
+      const block = document.getElementById(`progress-block-${module}`);
+      const label = document.getElementById(`status-${module}`);
+      const pctEl = document.getElementById(`progress-pct-${module}`);
+      const button = document.getElementById(`run-${module}`);
+      const stats = statusData.modules?.[module];
+
+      const isRunning = run?.status === "running";
+      block?.classList.toggle("running", isRunning);
+      label?.classList.toggle("running", isRunning);
+      button?.classList.toggle("running", isRunning);
+
+      if (module === "faces") {
+        // Faces has its own 3-stage renderer that also owns the status label.
+        updateFacesStages(run);
+        return;
+      }
+
+      if (!run) {
+        if (pctEl) pctEl.textContent = stats ? `${Math.round((stats.done / Math.max(stats.total, 1)) * 100)}%` : "0%";
+        if (label && stats) {
+          label.textContent = `В базе: ${stats.done} / ${stats.total} фото`;
+        }
+        return;
+      }
+
+      const phase = run.phase || "indexing";
+      const isReconcile = run.status === "running" && phase === "reconcile";
+      const total = Math.max(run.progress_total, 1);
+      const pct = phase === "pending"
+        ? 0
+        : Math.min(100, Math.round((run.progress_done / total) * 100));
+      if (pctEl) pctEl.textContent = phase === "pending" ? "…" : `${pct}%`;
+
+      // Drive shared stages for full runs (same block as search progress).
+      const stagesEl = document.getElementById(`stages-${module}`);
+      if (stagesEl && run.status === "running" && !block?.classList.contains("searching")) {
+        stagesEl.hidden = false;
+        const indexStages = ["reconcile", "indexing"];
+        stagesEl.querySelectorAll(".stage").forEach((el) => {
+          const name = el.dataset.stage;
+          el.hidden = !indexStages.includes(name);
+        });
+        if (phase === "pending" || phase === "reconcile") {
+          setWorkStage(stagesEl, indexStages, "reconcile", "active", hasTotalDetail(run));
+        } else if (phase === "indexing") {
+          setWorkStage(stagesEl, indexStages, "indexing", "active", `${pct}%`);
+        }
+      } else if (stagesEl && run.status !== "running" && !block?.classList.contains("searching")) {
+        // Keep last full-run state visible via the simple bar/label; collapse stages.
+        if (run.status === "done") {
+          stagesEl.hidden = false;
+          const indexStages = ["reconcile", "indexing"];
+          stagesEl.querySelectorAll(".stage").forEach((el) => {
+            const name = el.dataset.stage;
+            el.hidden = !indexStages.includes(name);
+          });
+          indexStages.forEach((name) => setWorkStage(stagesEl, indexStages, name, "done"));
+        }
+      }
+
+      if (run.status === "running") {
+        if (phase === "pending") {
+          label.textContent = "Подготовка…";
+        } else if (isReconcile) {
+          label.textContent = `Сверка каталога: ${run.progress_done} / ${run.progress_total} файлов`;
+        } else {
+          label.textContent = `Индексация: ${run.progress_done} / ${run.progress_total}`;
+        }
+      } else if (run.status === "failed") {
+        label.textContent = `Ошибка: ${run.last_error || "неизвестно"}`;
+        button?.classList.remove("running");
+        block?.classList.remove("running");
+      } else if (run.status === "done") {
+        if (run.last_error) {
+          label.textContent = run.last_error;
+        } else if (run.progress_total === 0) {
+          label.textContent = "Все фото уже проиндексированы";
+        } else {
+          label.textContent = `Завершено: ${run.progress_done} / ${run.progress_total} фото`;
+        }
+        button?.classList.remove("running");
+        block?.classList.remove("running");
+      } else if (stats) {
+        label.textContent = `В базе: ${stats.done} / ${stats.total} фото`;
+      }
+    }
+
+    function hasTotalDetail(run) {
+      return run.progress_total > 0
+        ? `${run.progress_done}/${run.progress_total}`
+        : "…";
+    }
+
+    async function fetchIndexStatus(includeStats = false) {
+      // One request for all modules. Previously we fired 3 parallel
+      // /index/status?module=… calls; with stats=true each walked ~30k files and
+      // the SQLite lock contention made a single poll take ~10s.
+      const statsParam = includeStats ? "true" : "false";
+      const response = await fetch(`/index/status?stats=${statsParam}`);
+      return response.json().catch(() => ({}));
+    }
+
+    function statusViewForModule(data, module) {
+      const runInfo = data.module_runs?.[module] || {};
+      return {
+        active_run: runInfo.active_run || null,
+        latest_run: runInfo.latest_run || null,
+        modules: data.modules || {},
+        background: data.background,
+        scope_total: data.scope_total,
+      };
+    }
+
+    async function refreshIndexStatus(includeStats = false) {
+      const data = await fetchIndexStatus(includeStats);
+      if (!data || (!data.module_runs && !data.modules && !data.active_run)) {
+        return;
+      }
+
+      INDEX_MODULES.forEach((module) => {
+        const view = statusViewForModule(data, module);
+        lastStatusByModule[module] = view;
+        updateModuleProgress(module, view);
+      });
+
+      if (includeStats) {
+        await refreshFacesReady();
+      }
+    }
+
+    async function startFullRun(module) {
+      const button = document.getElementById(`run-${module}`);
+      const label = document.getElementById(`status-${module}`);
+      if (module === "faces") {
+        facesRunOpened = true;
+      }
+      flashPress(button);
+      button?.classList.add("running");
+      label.textContent = "Запуск…";
+
+      const response = await fetch(`/index/run/full/${module}`, { method: "POST" });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        button?.classList.remove("running");
+        label.textContent = data.detail || "Ошибка запуска.";
+        return;
+      }
+
+      await refreshIndexStatus();
+      pollIndexStatus();
+    }
+
+    let indexPollTimer = null;
+    let statsPollCounter = 0;
+    let lastStatusByModule = {};
+
+    function pollIndexStatus() {
+      if (indexPollTimer) clearInterval(indexPollTimer);
+      // ~1.2s is enough: CLIP/YOLO progress advances slower than that, and
+      // status is a cheap SQLite read — not on the GPU critical path.
+      indexPollTimer = setInterval(async () => {
+        statsPollCounter += 1;
+        const includeStats = statsPollCounter % 10 === 0;
+        await refreshIndexStatus(includeStats);
+        const anyRunning = INDEX_MODULES.some(
+          (module) => lastStatusByModule[module]?.active_run?.status === "running",
+        );
+        if (!anyRunning) {
+          clearInterval(indexPollTimer);
+          indexPollTimer = null;
+          await refreshIndexStatus(true);
+          await loadPeople();
+        }
+      }, 1200);
+    }
+
+    document.getElementById("run-yolo").addEventListener("click", () => startFullRun("yolo"));
+    document.getElementById("run-clip").addEventListener("click", () => startFullRun("clip"));
+    document.getElementById("run-faces").addEventListener("click", async () => {
+      await startFullRun("faces");
+    });
+
+    async function refreshFacesReady() {
+      const response = await fetch("/index/faces-ready");
+      const data = await response.json().catch(() => ({}));
+      const ready = Boolean(data.ready);
+      const gate = document.getElementById("people-gate");
+      const actions = document.getElementById("people-actions");
+      if (!ready) {
+        const facesRun = lastStatusByModule.faces?.active_run || lastStatusByModule.faces?.latest_run;
+        if (facesRun?.status === "running") {
+          gate.textContent = "Идёт индексация лиц — можно подождать завершения.";
+        } else if ((data.done || 0) > 0) {
+          gate.textContent = `Проиндексировано ${data.done} / ${data.total} лиц. Завершите полный прогон Faces, чтобы группировать людей.`;
+        } else {
+          gate.textContent = "Запустите «Полный прогон Faces», чтобы найти людей.";
+        }
+        gate.style.display = "block";
+        actions.style.display = "none";
+        return;
+      }
+      gate.textContent = `Лица проиндексированы: ${data.done} / ${data.total}. Нажмите «Найти людей», затем можно давать имена.`;
+      gate.style.display = "block";
+      actions.style.display = "flex";
+    }
+
+    let peopleOffset = 0;
+    let peopleTotal = 0;
+    const PEOPLE_PAGE = 200;
+
+    function renderPersonCard(grid, person) {
+      const card = document.createElement("article");
+      card.className = "person-card";
+      card.dataset.personId = person.id;
+      const preview = person.preview_image_id
+        ? `/images/by-id/${encodeURIComponent(person.preview_image_id)}`
+        : "";
+      card.innerHTML = `
+        <label><input type="checkbox" class="person-select"> ${person.display_name}</label>
+        <span class="hint">${person.face_count} лиц</span>
+        ${preview ? `<img loading="lazy" src="${preview}" alt="">` : ""}
+        <button type="button" class="btn-secondary open-person">Открыть</button>
+      `;
+      card.querySelector(".person-select").addEventListener("change", (event) => {
+        if (event.target.checked) selectedPeople.add(person.id);
+        else selectedPeople.delete(person.id);
+        card.classList.toggle("selected", event.target.checked);
+      });
+      card.querySelector(".open-person").addEventListener("click", () =>
+        openPerson(person.id, person.display_name, person.name),
+      );
+      grid.appendChild(card);
+    }
+
+    async function loadPeople(append = false) {
+      const statusEl = document.getElementById("people-status");
+      const grid = document.getElementById("people-grid");
+      if (!append) {
+        peopleOffset = 0;
+        grid.innerHTML = "";
+        selectedPeople.clear();
+      }
+      document.getElementById("people-more")?.remove();
+
+      const response = await fetch(`/people?limit=${PEOPLE_PAGE}&offset=${peopleOffset}`);
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        statusEl.className = "status error";
+        statusEl.textContent = data.detail || "Не удалось загрузить людей.";
+        return;
+      }
+
+      (data.people || []).forEach((person) => renderPersonCard(grid, person));
+      peopleOffset += data.returned ?? (data.people?.length || 0);
+      peopleTotal = data.total ?? peopleOffset;
+
+      if (peopleOffset < peopleTotal) {
+        const more = document.createElement("button");
+        more.id = "people-more";
+        more.type = "button";
+        more.className = "btn-secondary";
+        more.textContent = `Показать ещё (${peopleTotal - peopleOffset})`;
+        more.addEventListener("click", () => loadPeople(true));
+        grid.after(more);
+      }
+
+      statusEl.className = "status";
+      const totalAll = data.total_all ?? peopleTotal;
+      const singles = Math.max(totalAll - peopleTotal, 0);
+      let text = `Показаны ${peopleOffset} из ${peopleTotal} групп (2+ лица).`;
+      if (singles > 0) text += ` Ещё ${singles} лиц встречаются по одному разу.`;
+      statusEl.textContent = text;
+
+      if (!append) loadLowConfidenceSummary();
+    }
+
+    let lowConfLoaded = false;
+
+    async function loadLowConfidenceSummary() {
+      const summary = document.getElementById("lowconf-summary");
+      try {
+        const data = await fetch("/people/low-confidence?limit=0").then((r) => r.json());
+        summary.textContent = `Лица с низким качеством (debug) — ${data.total} (score < ${data.threshold})`;
+      } catch {
+        summary.textContent = "Лица с низким качеством (debug)";
+      }
+    }
+
+    async function loadLowConfidenceFaces() {
+      const grid = document.getElementById("lowconf-grid");
+      grid.innerHTML = "<p class='hint'>Загрузка…</p>";
+      try {
+        const data = await fetch("/people/low-confidence?limit=200").then((r) => r.json());
+        grid.innerHTML = "";
+        if (!data.faces?.length) {
+          grid.innerHTML = "<p class='hint'>Таких лиц нет.</p>";
           return;
         }
-
-        showResult(data);
+        data.faces.forEach((face) => {
+          const card = document.createElement("div");
+          card.className = "thumb-card";
+          card.innerHTML = `
+            <img loading="lazy" src="/images/by-id/${encodeURIComponent(face.image_id)}" alt="">
+            <span>score ${face.detection_score.toFixed(2)}</span>
+          `;
+          grid.appendChild(card);
+        });
+        if (data.returned < data.total) {
+          const note = document.createElement("p");
+          note.className = "hint";
+          note.textContent = `Показаны первые ${data.returned} из ${data.total}.`;
+          grid.appendChild(note);
+        }
       } catch {
-        showError("Ошибка сети. Убедитесь, что API-сервер запущен.");
-      } finally {
-        setLoading(false);
+        grid.innerHTML = "<p class='status error'>Не удалось загрузить.</p>";
+      }
+    }
+
+    document.getElementById("lowconf-block").addEventListener("toggle", (event) => {
+      if (event.target.open && !lowConfLoaded) {
+        lowConfLoaded = true;
+        loadLowConfidenceFaces();
+      }
+    });
+
+    async function openPerson(personId, displayName, name) {
+      activePersonId = personId;
+      const detail = document.getElementById("person-detail");
+      detail.style.display = "block";
+      document.getElementById("person-detail-title").textContent = displayName;
+      document.getElementById("person-name-input").value = name || "";
+      const list = document.getElementById("person-faces");
+      list.innerHTML = "<p class='hint'>Загрузка лиц…</p>";
+      detail.scrollIntoView({ behavior: "smooth", block: "nearest" });
+
+      const response = await fetch(`/people/${personId}/faces`);
+      const faces = await response.json().catch(() => []);
+      list.innerHTML = "";
+      if (!Array.isArray(faces) || faces.length === 0) {
+        list.innerHTML = "<p class='hint'>Нет лиц для показа.</p>";
+        return;
+      }
+      faces.forEach((face) => {
+        const card = document.createElement("label");
+        card.className = "thumb-card";
+        card.innerHTML = `
+          <img loading="lazy" src="/images/by-id/${encodeURIComponent(face.image_id)}" alt="">
+          <span><input type="checkbox" value="${face.face_id}"> score ${face.detection_score.toFixed(2)}</span>
+        `;
+        list.appendChild(card);
+      });
+    }
+
+    document.getElementById("save-person-name").addEventListener("click", async () => {
+      if (!activePersonId) return;
+      const name = document.getElementById("person-name-input").value.trim();
+      if (!name) return;
+      await fetch(`/people/${activePersonId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      await loadPeople();
+    });
+
+    document.getElementById("split-person-faces").addEventListener("click", async () => {
+      if (!activePersonId) return;
+      const faceIds = [...document.querySelectorAll("#person-faces input:checked")].map(
+        (input) => input.value,
+      );
+      if (!faceIds.length) return;
+      await fetch("/people/split", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ person_id: activePersonId, face_ids: faceIds }),
+      });
+      await loadPeople();
+    });
+
+    document.getElementById("merge-people").addEventListener("click", async () => {
+      const ids = [...selectedPeople];
+      if (ids.length !== 2) {
+        document.getElementById("people-status").textContent = "Выберите ровно двух людей для объединения.";
+        return;
+      }
+      await fetch("/people/merge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ from_person_id: ids[0], to_person_id: ids[1] }),
+      });
+      await loadPeople();
+    });
+
+    async function runCluster(regroup) {
+      const statusEl = document.getElementById("people-status");
+      const clusterBtn = document.getElementById("cluster-people");
+      const regroupBtn = document.getElementById("regroup-people");
+      statusEl.className = "status";
+      statusEl.textContent = regroup ? "Перегруппировка…" : "Поиск людей…";
+      facesRunOpened = true;
+      clusterBtn.classList.add("running");
+      regroupBtn.classList.add("running");
+
+      const response = await fetch(`/people/cluster?regroup=${regroup}`, { method: "POST" });
+      const data = await response.json().catch(() => ({}));
+      clusterBtn.classList.remove("running");
+      regroupBtn.classList.remove("running");
+      if (!response.ok) {
+        statusEl.className = "status error";
+        statusEl.textContent = data.detail || "Не удалось запустить поиск людей.";
+        return;
+      }
+
+      // Clustering is now a tracked run (phase=clustering) — the index poll drives
+      // the stage bar and refreshes the people list when it finishes.
+      await refreshIndexStatus();
+      pollIndexStatus();
+    }
+
+    document.getElementById("cluster-people").addEventListener("click", () => runCluster(false));
+    document.getElementById("regroup-people").addEventListener("click", () => runCluster(true));
+
+    loadScanSettings();
+    refreshIndexStatus(true).then(() => {
+      const anyRunning = INDEX_MODULES.some(
+        (module) => lastStatusByModule[module]?.active_run?.status === "running",
+      );
+      if (anyRunning) {
+        pollIndexStatus();
       }
     });
   </script>

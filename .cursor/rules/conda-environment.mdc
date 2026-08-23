@@ -1,0 +1,35 @@
+---
+description: Запуск Python-скриптов через conda-окружение ml-env
+alwaysApply: true
+---
+
+# Conda-окружение
+
+Для запуска Python-скриптов и любых команд, требующих зависимости проекта, используй conda-окружение `ml-env`.
+
+## Обязательно
+
+- Перед запуском Python активируй окружение: `conda activate ml-env`
+- В одной shell-сессии сначала активируй окружение, затем выполняй команды
+
+## Запрещено
+
+- Не используй `conda run -n ml-env`
+- Не запускай `python` без предварительной активации `ml-env`
+
+## Примеры
+
+```bash
+# ✅ Правильно
+conda activate ml-env
+python ml/embeddings/clip.py
+
+# ✅ Правильно — несколько команд в одной сессии
+conda activate ml-env
+pip list
+python -m pytest
+
+# ❌ Неправильно
+conda run -n ml-env python ml/embeddings/clip.py
+python ml/embeddings/clip.py
+```

@@ -1,11 +1,15 @@
 from pathlib import Path
 
+import logging
+
 import numpy as np
 import torch
 from PIL import Image
 from transformers import CLIPModel, CLIPProcessor
 
 from ml.embeddings.base import EmbeddingModel
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_MODEL_NAME = "openai/clip-vit-base-patch32"
 
@@ -21,9 +25,23 @@ class CLIPEmbeddingModel(EmbeddingModel):
         self.model_name = model_name
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
 
-        self.model = CLIPModel.from_pretrained(model_name).to(self.device)
-        self.processor = CLIPProcessor.from_pretrained(model_name)
+        # Prefer the local HF cache. A slow/hung Hub check on startup is what
+        # made uvicorn appear frozen (and ignore Ctrl+C) for minutes.
+        self.model = self._load_pretrained(CLIPModel, model_name).to(self.device)
+        self.processor = self._load_pretrained(CLIPProcessor, model_name)
         self.model.eval()
+
+    @staticmethod
+    def _load_pretrained(cls, model_name: str):
+        try:
+            return cls.from_pretrained(model_name, local_files_only=True)
+        except Exception:
+            logger.warning(
+                "local cache miss for %s (%s); downloading from Hugging Face…",
+                model_name,
+                cls.__name__,
+            )
+            return cls.from_pretrained(model_name)
 
     def encode_text(self, text: str) -> np.ndarray:
         inputs = self.processor(

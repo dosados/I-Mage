@@ -15,14 +15,30 @@
 
 ## Быстрый старт
 
+1. Поднять Qdrant-сервер (docker):
+
 ```bash
-conda activate ml-env
-uvicorn api.app:app --reload
+docker compose up -d          # или: sudo docker compose up -d
 ```
 
-Открыть http://127.0.0.1:8000 
+2. Запустить приложение:
 
-Опционально: каталог с фото через `IMAGE_SEARCH_DIR`, датасет для тестов — `python scripts/download_data.py`.
+```bash
+conda activate ml-env
+./run.sh                      # автоматически использует QDRANT_URL=http://127.0.0.1:6333
+```
+
+Открыть http://127.0.0.1:8000
+
+> **Qdrant работает только как сервер (docker).** `run.sh` ходит на
+> `http://127.0.0.1:6333` (переопределяется через `QDRANT_URL`). Встроенный
+> файловый режим удалён: его single-writer лок ломал запуск под несколькими
+> процессами / `--reload` и рассинхронизировал индекс.
+>
+> **Не запускайте `uvicorn --reload` во время индексации** — перезапуск обрывает прогон.
+> Для разработки с авто-перезагрузкой есть `./run-dev.sh` (не следит за `data/`).
+
+Опционально: каталог с фото через `IMAGE_SEARCH_DIR`, датасет для тестов — `python scripts/download_data.py`. Для поиска по лицу: `python scripts/download_celeba.py`, затем быстрый сабсет `python scripts/build_small_celeba.py` → `data/small_celeba/` (по умолчанию для face search), полный CelebA — через `FACE_SEARCH_DIR`.
 
 ## Чеклист
 

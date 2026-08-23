@@ -4,8 +4,6 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
-from io_utils.fs import IMAGE_SUFFIXES, collect_files
-
 from ml.embeddings.base import EmbeddingModel
 
 logger = logging.getLogger(__name__)
@@ -25,26 +23,16 @@ class SearchResult:
 
 def search_by_description(
     query: str,
-    directory: Path,
+    paths: Iterable[str | Path],
     model: EmbeddingModel,
     *,
-    suffixes: Iterable[str] | None = None,
-    recursive: bool = True,
-    limit: int | None = None,
     k: int = 1,
 ) -> SearchResult:
-    image_paths = collect_files(
-        directory,
-        suffixes or IMAGE_SUFFIXES,
-        recursive=recursive,
-    )
-    if limit is not None:
-        image_paths = image_paths[:limit]
+    image_paths = [Path(path) for path in paths]
     if not image_paths:
-        raise ValueError(f"no images found in {directory}")
+        raise ValueError("no image paths provided")
 
     responses_list = []
-
     query_embedding = model.encode_text(query)
 
     for image_path in image_paths:
@@ -62,6 +50,6 @@ def search_by_description(
             responses_list.pop()
 
     if len(responses_list) == 0:
-        raise ValueError("no valid pictures in directory")
+        raise ValueError("no valid pictures in provided paths")
 
     return SearchResult(query=query, matches=responses_list)
