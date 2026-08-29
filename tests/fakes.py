@@ -22,6 +22,7 @@ class FakeClip(EmbeddingModel):
         self.model_name = name
         self.dim = dim
         self.encode_image_calls: list[Path] = []
+        self.encode_images_calls: list[list[Path]] = []
         self.encode_text_calls: list[str] = []
 
     def encode_image(self, image) -> np.ndarray:
@@ -33,11 +34,17 @@ class FakeClip(EmbeddingModel):
         self.encode_text_calls.append(text)
         return unit_vec(hash(text) % 10_000, self.dim)
 
+    def encode_images(self, images) -> list[np.ndarray]:
+        paths = [Path(image) for image in images]
+        self.encode_images_calls.append(paths)
+        return [self.encode_image(path) for path in paths]
+
 
 class FakeYolo(ObjectsRetriever):
     def __init__(self, *, name: str = "fake-yolo") -> None:
         self.model_name = name
         self.detect_calls: list[Path] = []
+        self.detect_batch_calls: list[list[Path]] = []
         self._by_name: dict[str, list[Detection]] = {}
 
     def set_detections(self, path: Path, detections: list[Detection]) -> None:
@@ -53,12 +60,18 @@ class FakeYolo(ObjectsRetriever):
     def detect_labels(self, image) -> list[str]:
         return sorted({d.label for d in self.detect(image)})
 
+    def detect_batch(self, images) -> list[list[Detection]]:
+        paths = [Path(image) for image in images]
+        self.detect_batch_calls.append(paths)
+        return [self.detect(path) for path in paths]
+
 
 class FakeFaces(FaceRecognizer):
     def __init__(self, *, dim: int = 8, name: str = "fake-arcface") -> None:
         self.model_name = name
         self._dim = dim
         self.analyze_calls: list = []
+        self.analyze_batch_calls: list[list] = []
         self._by_key: dict[str, list[Face]] = {}
 
     @property
@@ -87,6 +100,16 @@ class FakeFaces(FaceRecognizer):
         faces.sort(key=lambda item: item.detection_score, reverse=True)
         return faces
 
+    def analyze_batch(self, images, *, should_stop=None) -> list[list[Face]]:
+        paths = list(images)
+        self.analyze_batch_calls.append(paths)
+        results: list[list[Face]] = []
+        for image in paths:
+            if should_stop is not None and should_stop():
+                raise InterruptedError("face analysis stopped")
+            results.append(self.analyze(image))
+        return results
+
 
 class FakeVectorStore:
     """In-memory stand-in for ``vectors.store.VectorStore`` used in unit tests."""
@@ -113,6 +136,16 @@ class FakeVectorStore:
     ) -> None:
         self.upsert_context_calls += 1
         self.context[image_id] = np.asarray(embedding, dtype=np.float32)
+
+    def upsert_contexts(
+        self,
+        items: Sequence[tuple[str, np.ndarray]],
+        *,
+        model_version: str,
+    ) -> None:
+        self.upsert_context_calls += 1
+        for image_id, embedding in items:
+            self.context[image_id] = np.asarray(embedding, dtype=np.float32)
 
     def upsert_faces(
         self,

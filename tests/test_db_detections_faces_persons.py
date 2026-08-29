@@ -161,6 +161,60 @@ class TestPersons:
             assert split.id != a.id
             assert len(db.persons.list_faces_for_person(a.id)) == 1
             assert len(db.persons.list_faces_for_person(split.id)) == 1
+            sources = {
+                row.source
+                for row in db.persons.list_assignments_for_faces([faces[0].id, faces[1].id])
+            }
+            assert sources == {"manual_split"}
+
+    def test_merge_person_ids_prefers_named(self, db: Database, image_dir: Path) -> None:
+        with db:
+            record, _ = _image(db, image_dir)
+            emb = np.zeros(4, dtype=np.float32)
+            faces = db.faces.replace_for_image(
+                record.id,
+                [
+                    MlFace(bbox=(0, 0, 1, 1), detection_score=0.9, embedding=emb),
+                    MlFace(bbox=(2, 2, 3, 3), detection_score=0.8, embedding=emb),
+                    MlFace(bbox=(4, 4, 5, 5), detection_score=0.7, embedding=emb),
+                ],
+                model_version="v1",
+            )
+            unnamed_a = db.persons.create_person()
+            named = db.persons.create_person(name="Ada", is_named=True)
+            unnamed_b = db.persons.create_person()
+            db.persons.assign_faces(unnamed_a.id, [faces[0].id], source="auto_cluster")
+            db.persons.assign_faces(named.id, [faces[1].id], source="auto_cluster")
+            db.persons.assign_faces(unnamed_b.id, [faces[2].id], source="auto_cluster")
+            merged = db.persons.merge_person_ids([unnamed_a.id, named.id, unnamed_b.id])
+            assert merged is not None
+            assert merged.id == named.id
+            assert merged.face_count == 3
+            assert db.persons.get_person(unnamed_a.id) is None
+            assert db.persons.get_person(unnamed_b.id) is None
+
+    def test_split_into_groups_freezes_remaining(self, db: Database, image_dir: Path) -> None:
+        with db:
+            record, _ = _image(db, image_dir)
+            emb = np.zeros(4, dtype=np.float32)
+            faces = db.faces.replace_for_image(
+                record.id,
+                [
+                    MlFace(bbox=(0, 0, 1, 1), detection_score=0.9, embedding=emb),
+                    MlFace(bbox=(2, 2, 3, 3), detection_score=0.8, embedding=emb),
+                    MlFace(bbox=(4, 4, 5, 5), detection_score=0.7, embedding=emb),
+                ],
+                model_version="v1",
+            )
+            person = db.persons.create_person()
+            ids = [face.id for face in faces]
+            db.persons.assign_faces(person.id, ids, source="auto_cluster")
+            created = db.persons.split_person_into_groups(person.id, [[ids[0]], [ids[1]]])
+            assert len(created) == 2
+            assert len(db.persons.list_faces_for_person(person.id)) == 1
+            assignments = db.persons.list_assignments_for_faces(ids)
+            assert {row.source for row in assignments} == {"manual_split"}
+            assert db.persons.list_regroup_eligible_face_ids(ids) == []
 
     def test_merge_self_raises(self, db: Database) -> None:
         with db:

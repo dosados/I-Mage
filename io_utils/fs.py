@@ -1,4 +1,7 @@
 import logging
+import shutil
+import subprocess
+import sys
 from collections.abc import Iterable
 from pathlib import Path
 
@@ -54,3 +57,45 @@ def collect_files(
             paths.append(path)
 
     return sorted(paths)
+
+
+def reveal_in_file_manager(path: Path) -> bool:
+    """Open the file's folder in the desktop file manager, selecting the file if possible."""
+    resolved = path.expanduser().resolve()
+    if not resolved.exists():
+        return False
+    folder = resolved if resolved.is_dir() else resolved.parent
+    try:
+        if sys.platform == "darwin":
+            subprocess.Popen(["open", "-R", str(resolved)], start_new_session=True)
+            return True
+        if sys.platform == "win32":
+            subprocess.Popen(["explorer", f"/select,{resolved}"], start_new_session=True)
+            return True
+        for command in (
+            ["nautilus", "--select", str(resolved)],
+            ["dolphin", "--select", str(resolved)],
+            ["nemo", str(folder)],
+            ["thunar", str(folder)],
+        ):
+            if shutil.which(command[0]) is None:
+                continue
+            subprocess.Popen(
+                command,
+                start_new_session=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            return True
+        if shutil.which("xdg-open"):
+            subprocess.Popen(
+                ["xdg-open", str(folder)],
+                start_new_session=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            return True
+    except OSError:
+        logger.warning("could not open file manager for %s", resolved, exc_info=True)
+        return False
+    return False

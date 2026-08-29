@@ -6,7 +6,7 @@ import pytest
 
 from api.paths import resolve_image_paths, resolve_scoped_image_paths
 from helpers import make_image_file
-from io_utils.fs import IMAGE_SUFFIXES, collect_files, filter_image_paths
+from io_utils.fs import IMAGE_SUFFIXES, collect_files, filter_image_paths, reveal_in_file_manager
 from io_utils.scan import collect_scoped_files
 
 
@@ -39,6 +39,24 @@ class TestFsUtils:
         missing = tmp_path / "gone.jpg"
         result = filter_image_paths([good, bad, missing])
         assert result == [good]
+
+    def test_reveal_opens_folder(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        photo = make_image_file(tmp_path, "shot.jpg")
+        calls: list[list[str]] = []
+
+        def fake_which(name: str) -> str | None:
+            return "/usr/bin/xdg-open" if name == "xdg-open" else None
+
+        def fake_popen(command, **_kwargs):
+            calls.append(list(command))
+            return None
+
+        monkeypatch.setattr("io_utils.fs.shutil.which", fake_which)
+        monkeypatch.setattr("io_utils.fs.sys.platform", "linux")
+        monkeypatch.setattr("io_utils.fs.subprocess.Popen", fake_popen)
+        assert reveal_in_file_manager(photo) is True
+        assert calls == [["xdg-open", str(photo.parent)]]
+        assert reveal_in_file_manager(tmp_path / "missing.jpg") is False
 
 
 class TestScopedScan:

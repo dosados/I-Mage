@@ -19,6 +19,10 @@ class ObjectsRetriever(ABC):
     def detect(self, image: ImageInput) -> list[Detection]:
         pass
 
+    def detect_batch(self, images: list[ImageInput]) -> list[list[Detection]]:
+        """Detect objects in a batch, falling back to serial calls for fakes."""
+        return [self.detect(image) for image in images]
+
     @abstractmethod
     def detect_labels(self, image: ImageInput) -> list[str]:
         pass

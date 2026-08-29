@@ -8,16 +8,10 @@ from typing import Any
 
 import numpy as np
 
-from api.paths import resolve_scoped_image_paths
-from db.database import Database
-from db.hash import resolved_path_key
-from db.types import MODULE_CLIP, MODULE_FACES, MODULE_YOLO
-from indexing.clip import index_clip_gap
-from indexing.faces import index_faces_gap
-from indexing.ml_lock import get_ml_lock
-from indexing.yolo import index_yolo_gap
+from api.keywords import extract_labels_from_query, merge_labels
+from indexing.gpu_scheduler import GpuScheduler, get_gpu_scheduler
 from ml.embeddings.base import EmbeddingModel
-from ml.embeddings.service import ImageMatch, SearchResult, search_by_description
+from ml.embeddings.service import ImageMatch, SearchResult
 from ml.faces.base import FaceRecognizer
 from ml.faces.service import (
     FaceMatch,
@@ -47,12 +41,8 @@ class ClassSearchResult:
 
 
 def _resolve_paths(db: Database, *, limit: int | None = None) -> list[Path]:
-    config = db.get_scan_config()
-    return resolve_scoped_image_paths(
-        config.include_directories,
-        config.ignore_globs,
-        limit=limit,
-    )
+    with db:
+        return [record.path for record in db.images.list_all(limit=limit)]
 
 
 def _emit(
@@ -65,12 +55,6 @@ def _emit(
         on_progress(stage, status, payload)
 
 
-def _gap_paths(db: Database, paths: list[Path], module: str) -> list[Path]:
-    """Paths in scope whose module status isn't DONE — one flat query, no ORM graph."""
-    done = db.images.done_paths_for_module(module, paths)
-    return [path for path in paths if resolved_path_key(path) not in done]
-
-
 def run_search_by_description(
     query: str,
     model: EmbeddingModel,
@@ -81,56 +65,31 @@ def run_search_by_description(
     k: int = 1,
     on_progress: ProgressCallback | None = None,
 ) -> SearchResult:
-    _emit(on_progress, "reconcile", "running")
     paths = _resolve_paths(db, limit=limit)
-    path_set = set(paths)
-    model_version = model.model_name
-
-    with db:
-        db.reconcile_paths(path_set, remove_missing=False)
-        gap_paths = _gap_paths(db, paths, MODULE_CLIP)
-    _emit(on_progress, "reconcile", "done", total=len(paths), gap=len(gap_paths))
-
-    if gap_paths and vector_store.available:
-        _emit(on_progress, "index_gap", "running", gap=len(gap_paths))
-        with get_ml_lock():
-            with db:
-                index_clip_gap(
-                    db,
-                    vector_store,
-                    gap_paths,
-                    model,
-                    model_version=model_version,
-                )
-        _emit(on_progress, "index_gap", "done", gap=len(gap_paths))
-    else:
-        _emit(on_progress, "index_gap", "done", gap=0)
+    _emit(on_progress, "catalog", "done", total=len(paths))
 
     _emit(on_progress, "search", "running")
-    if vector_store.available:
+    if not vector_store.available:
+        raise ValueError("Qdrant unavailable — CLIP index required for search")
+    with get_gpu_scheduler().acquire(
+        "search:clip-text",
+        priority=GpuScheduler.INTERACTIVE,
+    ):
         query_embedding = model.encode_text(query)
-        with db:
-            id_to_path = db.images.id_to_path_for_scope(paths)
-        hits = vector_store.search_context(
-            query_embedding,
-            list(id_to_path.keys()) if id_to_path else None,
-            k=k,
-        )
-        matches = [
-            ImageMatch(path=id_to_path[hit.image_id], score=hit.score)
-            for hit in hits
-            if hit.image_id in id_to_path
-        ]
-        _emit(on_progress, "search", "done", matches=len(matches))
-        if matches:
-            return SearchResult(query=query, matches=matches)
-        # Index exists but nothing matched — do NOT fall back to embedding every file.
-        return SearchResult(query=query, matches=[])
-
-    # No Qdrant: legacy on-the-fly scan.
-    result = search_by_description(query, paths, model, k=k)
-    _emit(on_progress, "search", "done", matches=len(result.matches))
-    return result
+    with db:
+        id_to_path = db.images.id_to_path_for_scope(paths)
+    hits = vector_store.search_context(
+        query_embedding,
+        list(id_to_path.keys()) if id_to_path else None,
+        k=k,
+    )
+    matches = [
+        ImageMatch(path=id_to_path[hit.image_id], score=hit.score)
+        for hit in hits
+        if hit.image_id in id_to_path
+    ]
+    _emit(on_progress, "search", "done", matches=len(matches))
+    return SearchResult(query=query, matches=matches)
 
 
 def run_search_by_class(
@@ -142,28 +101,14 @@ def run_search_by_class(
     k: int | None = None,
     on_progress: ProgressCallback | None = None,
 ) -> ClassSearchResult:
+    del retriever
     normalized_label = label.strip().lower()
     if not normalized_label:
         raise ValueError("label must not be empty")
 
-    _emit(on_progress, "reconcile", "running")
     paths = _resolve_paths(db, limit=limit)
-    path_set = set(paths)
-    model_version = retriever.model_name
-
-    with db:
-        db.reconcile_paths(path_set, remove_missing=False)
-        gap_paths = _gap_paths(db, paths, MODULE_YOLO)
-    _emit(on_progress, "reconcile", "done", total=len(paths), gap=len(gap_paths))
-
-    if gap_paths:
-        _emit(on_progress, "index_gap", "running", gap=len(gap_paths))
-        with get_ml_lock():
-            with db:
-                index_yolo_gap(db, gap_paths, retriever, model_version=model_version)
-        _emit(on_progress, "index_gap", "done", gap=len(gap_paths))
-    else:
-        _emit(on_progress, "index_gap", "done", gap=0)
+    path_set = set(paths) if limit is not None else None
+    _emit(on_progress, "catalog", "done", total=len(paths))
 
     _emit(on_progress, "search", "running")
     with db:
@@ -187,7 +132,11 @@ def run_embed_query_face(
     image: ImageInput,
     recognizer: FaceRecognizer,
 ) -> QueryFaceEmbedding:
-    return encode_query_face(image, recognizer)
+    with get_gpu_scheduler().acquire(
+        "search:face-query",
+        priority=GpuScheduler.INTERACTIVE,
+    ):
+        return encode_query_face(image, recognizer)
 
 
 def _aggregate_face_hits(
@@ -222,41 +171,14 @@ def run_search_by_face(
     on_progress: ProgressCallback | None = None,
     allow_bruteforce_fallback: bool = False,
 ) -> FaceSearchResult:
-    """Search faces against the Qdrant index after a cheap catalog reconcile.
-
-    After a full Faces run the gap is empty, so this path is: reconcile → vector
-    search. It must NOT re-run ArcFace over the whole catalog when Qdrant is up.
-    """
-    _emit(on_progress, "reconcile", "running")
+    """Search only the existing face index; catalog indexing is a separate job."""
     paths = _resolve_paths(db, limit=limit)
-    path_set = set(paths)
-    model_version = recognizer.model_name
+    _emit(on_progress, "catalog", "done", total=len(paths))
     embedding = (
         np.asarray(query_embedding, dtype=np.float32)
         if not isinstance(query_embedding, np.ndarray)
         else query_embedding
     )
-
-    with db:
-        db.reconcile_paths(path_set, remove_missing=False)
-        gap_paths = _gap_paths(db, paths, MODULE_FACES)
-    _emit(on_progress, "reconcile", "done", total=len(paths), gap=len(gap_paths))
-
-    if gap_paths and vector_store.available:
-        _emit(on_progress, "index_gap", "running", gap=len(gap_paths))
-        logger.info("face search indexing gap=%d before query", len(gap_paths))
-        with get_ml_lock():
-            with db:
-                index_faces_gap(
-                    db,
-                    vector_store,
-                    gap_paths,
-                    recognizer,
-                    model_version=model_version,
-                )
-        _emit(on_progress, "index_gap", "done", gap=len(gap_paths))
-    else:
-        _emit(on_progress, "index_gap", "done", gap=0)
 
     _emit(on_progress, "search", "running")
     if vector_store.available:
@@ -294,6 +216,246 @@ def run_search_by_face(
     return result
 
 
+@dataclass(frozen=True)
+class UnifiedSearchMatch:
+    path: Path
+    clip_score: float | None
+    yolo: dict[str, float]
+    sources: list[str]
+    rank_score: float
+
+
+@dataclass(frozen=True)
+class UnifiedSearchResult:
+    query: str
+    labels: list[str]
+    matches: list[UnifiedSearchMatch]
+
+
+def _resolve_unified_labels(query: str, labels: list[str] | None) -> list[str]:
+    auto = extract_labels_from_query(query) if labels is None else []
+    explicit = labels or []
+    return merge_labels(auto, explicit)
+
+
+def _rank_unified(
+    *,
+    clip_score: float | None,
+    yolo: dict[str, float],
+    sources: list[str],
+) -> float:
+    has_semantic = "semantic" in sources
+    has_object = "object" in sources
+    clip = clip_score or 0.0
+    yolo_max = max(yolo.values()) if yolo else 0.0
+    primary = max(clip, yolo_max)
+    bonus = 1.0 if has_semantic and has_object else 0.0
+    return bonus + primary
+
+
+def _merge_unified_matches(
+    clip_matches: list[ImageMatch],
+    yolo_matches_by_label: dict[str, list[ClassSearchMatch]],
+    *,
+    k: int,
+) -> list[UnifiedSearchMatch]:
+    by_path: dict[str, UnifiedSearchMatch] = {}
+
+    for match in clip_matches:
+        key = str(match.path)
+        sources = ["semantic"]
+        yolo: dict[str, float] = {}
+        entry = UnifiedSearchMatch(
+            path=match.path,
+            clip_score=match.score,
+            yolo=yolo,
+            sources=sources,
+            rank_score=_rank_unified(
+                clip_score=match.score, yolo=yolo, sources=sources
+            ),
+        )
+        by_path[key] = entry
+
+    for label, matches in yolo_matches_by_label.items():
+        for match in matches:
+            key = str(match.path)
+            existing = by_path.get(key)
+            if existing is None:
+                yolo = {label: match.confidence}
+                sources = ["object"]
+                by_path[key] = UnifiedSearchMatch(
+                    path=match.path,
+                    clip_score=None,
+                    yolo=yolo,
+                    sources=sources,
+                    rank_score=_rank_unified(
+                        clip_score=None, yolo=yolo, sources=sources
+                    ),
+                )
+                continue
+
+            yolo = dict(existing.yolo)
+            yolo[label] = max(yolo.get(label, match.confidence), match.confidence)
+            sources = list(existing.sources)
+            if "object" not in sources:
+                sources.append("object")
+            by_path[key] = UnifiedSearchMatch(
+                path=existing.path,
+                clip_score=existing.clip_score,
+                yolo=yolo,
+                sources=sources,
+                rank_score=_rank_unified(
+                    clip_score=existing.clip_score, yolo=yolo, sources=sources
+                ),
+            )
+
+    merged = sorted(by_path.values(), key=lambda item: item.rank_score, reverse=True)
+    return merged[:k]
+
+
+def run_unified_search(
+    query: str,
+    model: EmbeddingModel,
+    retriever: ObjectsRetriever,
+    db: Database,
+    vector_store: VectorStore,
+    *,
+    labels: list[str] | None = None,
+    limit: int | None = None,
+    k: int = 10,
+    on_progress: ProgressCallback | None = None,
+) -> UnifiedSearchResult:
+    del retriever
+    normalized_query = query.strip()
+    if not normalized_query:
+        raise ValueError("query must not be empty")
+
+    active_labels = _resolve_unified_labels(normalized_query, labels)
+
+    paths = _resolve_paths(db, limit=limit)
+    path_set = set(paths) if limit is not None else None
+    _emit(on_progress, "catalog", "done", total=len(paths))
+
+    _emit(on_progress, "search", "running", source="semantic")
+    clip_matches: list[ImageMatch] = []
+    if vector_store.available and paths:
+        with get_gpu_scheduler().acquire(
+            "search:clip-text",
+            priority=GpuScheduler.INTERACTIVE,
+        ):
+            query_embedding = model.encode_text(normalized_query)
+        with db:
+            id_to_path = db.images.id_to_path_for_scope(paths)
+        hits = vector_store.search_context(
+            query_embedding,
+            list(id_to_path.keys()) if id_to_path else None,
+            k=k,
+        )
+        clip_matches = [
+            ImageMatch(path=id_to_path[hit.image_id], score=hit.score)
+            for hit in hits
+            if hit.image_id in id_to_path
+        ]
+    elif not vector_store.available:
+        raise ValueError("Qdrant unavailable — CLIP index required for search")
+    _emit(on_progress, "search", "done", source="semantic", matches=len(clip_matches))
+
+    yolo_by_label: dict[str, list[ClassSearchMatch]] = {}
+    for label in active_labels:
+        _emit(on_progress, "search", "running", source="object", label=label)
+        with db:
+            found = db.detections.search_by_label(label, k=k, paths=path_set)
+        yolo_by_label[label] = [
+            ClassSearchMatch(path=match.path, confidence=match.confidence)
+            for match in found
+        ]
+        _emit(
+            on_progress,
+            "search",
+            "done",
+            source="object",
+            label=label,
+            matches=len(yolo_by_label[label]),
+        )
+
+    merged = _merge_unified_matches(clip_matches, yolo_by_label, k=k)
+    return UnifiedSearchResult(
+        query=normalized_query,
+        labels=active_labels,
+        matches=merged,
+    )
+
+
+def _unified_matches_payload(matches: list[UnifiedSearchMatch]) -> list[dict[str, Any]]:
+    return [
+        {
+            "path": str(match.path),
+            "clip_score": match.clip_score,
+            "yolo": match.yolo,
+            "sources": match.sources,
+            "rank_score": match.rank_score,
+        }
+        for match in matches
+    ]
+
+
+def iter_unified_search_events(
+    query: str,
+    model: EmbeddingModel,
+    retriever: ObjectsRetriever,
+    db: Database,
+    vector_store: VectorStore,
+    *,
+    labels: list[str] | None = None,
+    limit: int | None = None,
+    k: int = 10,
+) -> Iterator[dict[str, Any]]:
+    try:
+        yield from _iter_unified_search_events_impl(
+            query,
+            model,
+            retriever,
+            db,
+            vector_store,
+            labels=labels,
+            limit=limit,
+            k=k,
+        )
+    except ValueError as exc:
+        yield {"stage": "error", "status": "failed", "detail": str(exc)}
+
+
+def _iter_unified_search_events_impl(
+    query: str,
+    model: EmbeddingModel,
+    retriever: ObjectsRetriever,
+    db: Database,
+    vector_store: VectorStore,
+    *,
+    labels: list[str] | None = None,
+    limit: int | None = None,
+    k: int = 10,
+) -> Iterator[dict[str, Any]]:
+    yield {"stage": "search", "status": "running"}
+    result = run_unified_search(
+        query,
+        model,
+        retriever,
+        db,
+        vector_store,
+        labels=labels,
+        limit=limit,
+        k=k,
+    )
+    yield {
+        "stage": "done",
+        "status": "done",
+        "query": result.query,
+        "labels": result.labels,
+        "matches": _unified_matches_payload(result.matches),
+    }
+
+
 def iter_description_search_events(
     query: str,
     model: EmbeddingModel,
@@ -304,55 +466,19 @@ def iter_description_search_events(
     k: int = 1,
 ) -> Iterator[dict[str, Any]]:
     try:
-        yield {"stage": "reconcile", "status": "running"}
-        paths = _resolve_paths(db, limit=limit)
-        path_set = set(paths)
-        model_version = model.model_name
-        with db:
-            db.reconcile_paths(path_set, remove_missing=False)
-            gap_paths = _gap_paths(db, paths, MODULE_CLIP)
-        yield {
-            "stage": "reconcile",
-            "status": "done",
-            "total": len(paths),
-            "gap": len(gap_paths),
-        }
-
-        if gap_paths and vector_store.available:
-            yield {"stage": "index_gap", "status": "running", "gap": len(gap_paths)}
-            with get_ml_lock():
-                with db:
-                    index_clip_gap(
-                        db,
-                        vector_store,
-                        gap_paths,
-                        model,
-                        model_version=model_version,
-                    )
-            yield {"stage": "index_gap", "status": "done", "gap": len(gap_paths)}
-        else:
-            yield {"stage": "index_gap", "status": "done", "gap": 0}
-
         yield {"stage": "search", "status": "running"}
-        if vector_store.available:
-            query_embedding = model.encode_text(query)
-            with db:
-                id_to_path = db.images.id_to_path_for_scope(paths)
-            hits = vector_store.search_context(
-                query_embedding,
-                list(id_to_path.keys()) if id_to_path else None,
-                k=k,
-            )
-            matches = [
-                {"path": str(id_to_path[hit.image_id]), "score": hit.score}
-                for hit in hits
-                if hit.image_id in id_to_path
-            ]
-        else:
-            result = search_by_description(query, paths, model, k=k)
-            matches = [
-                {"path": str(match.path), "score": match.score} for match in result.matches
-            ]
+        result = run_search_by_description(
+            query,
+            model,
+            db,
+            vector_store,
+            limit=limit,
+            k=k,
+        )
+        matches = [
+            {"path": str(match.path), "score": match.score}
+            for match in result.matches
+        ]
         yield {"stage": "search", "status": "done", "matches": len(matches)}
         yield {"stage": "done", "status": "done", "matches": matches, "query": query}
     except ValueError as exc:
@@ -368,40 +494,17 @@ def iter_class_search_events(
     k: int | None = None,
 ) -> Iterator[dict[str, Any]]:
     try:
-        normalized = label.strip().lower()
-        if not normalized:
-            raise ValueError("label must not be empty")
-
-        yield {"stage": "reconcile", "status": "running"}
-        paths = _resolve_paths(db, limit=limit)
-        path_set = set(paths)
-        model_version = retriever.model_name
-        with db:
-            db.reconcile_paths(path_set, remove_missing=False)
-            gap_paths = _gap_paths(db, paths, MODULE_YOLO)
-        yield {
-            "stage": "reconcile",
-            "status": "done",
-            "total": len(paths),
-            "gap": len(gap_paths),
-        }
-
-        if gap_paths:
-            yield {"stage": "index_gap", "status": "running", "gap": len(gap_paths)}
-            with get_ml_lock():
-                with db:
-                    index_yolo_gap(
-                        db, gap_paths, retriever, model_version=model_version
-                    )
-            yield {"stage": "index_gap", "status": "done", "gap": len(gap_paths)}
-        else:
-            yield {"stage": "index_gap", "status": "done", "gap": 0}
-
         yield {"stage": "search", "status": "running"}
-        with db:
-            found = db.detections.search_by_label(label, k=k, paths=path_set)
+        result = run_search_by_class(
+            label,
+            retriever,
+            db,
+            limit=limit,
+            k=k,
+        )
         matches = [
-            {"path": str(match.path), "confidence": match.confidence} for match in found
+            {"path": str(match.path), "confidence": match.confidence}
+            for match in result.matches
         ]
         yield {"stage": "search", "status": "done", "matches": len(matches)}
         yield {
@@ -424,60 +527,19 @@ def iter_face_search_events(
     k: int = 10,
     threshold: float = 0.4,
 ) -> Iterator[dict[str, Any]]:
-    """Yield NDJSON progress after each stage so the UI can update live."""
+    """Yield progress for an index-only face search."""
     try:
-        yield {"stage": "reconcile", "status": "running"}
-        paths = _resolve_paths(db, limit=limit)
-        path_set = set(paths)
-        model_version = recognizer.model_name
-        embedding = (
-            np.asarray(query_embedding, dtype=np.float32)
-            if not isinstance(query_embedding, np.ndarray)
-            else query_embedding
-        )
-
-        with db:
-            db.reconcile_paths(path_set, remove_missing=False)
-            gap_paths = _gap_paths(db, paths, MODULE_FACES)
-        yield {
-            "stage": "reconcile",
-            "status": "done",
-            "total": len(paths),
-            "gap": len(gap_paths),
-        }
-
-        if gap_paths and vector_store.available:
-            yield {"stage": "index_gap", "status": "running", "gap": len(gap_paths)}
-            logger.info("face search indexing gap=%d before query", len(gap_paths))
-            with get_ml_lock():
-                with db:
-                    index_faces_gap(
-                        db,
-                        vector_store,
-                        gap_paths,
-                        recognizer,
-                        model_version=model_version,
-                    )
-            yield {"stage": "index_gap", "status": "done", "gap": len(gap_paths)}
-        else:
-            yield {"stage": "index_gap", "status": "done", "gap": 0}
-
         yield {"stage": "search", "status": "running"}
-        if not vector_store.available:
-            raise ValueError("Qdrant unavailable — face index required for search")
-
-        with db:
-            id_to_path = db.images.id_to_path_for_scope(paths)
-        if not id_to_path:
-            raise ValueError("no indexed images in scope — run Faces indexing first")
-
-        hits = vector_store.search_faces(
-            embedding,
-            list(id_to_path.keys()),
-            limit=max(k * 20, 100),
-            score_threshold=threshold,
+        result = run_search_by_face(
+            query_embedding,
+            recognizer,
+            db,
+            vector_store,
+            limit=limit,
+            k=k,
+            threshold=threshold,
         )
-        matches = _aggregate_face_hits(hits, id_to_path=id_to_path, k=k)
+        matches = result.matches
         yield {"stage": "search", "status": "done", "matches": len(matches)}
         yield {
             "stage": "done",

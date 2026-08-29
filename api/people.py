@@ -87,10 +87,7 @@ def rename_person(person_id: str, payload: PersonRenameRequest, request: Request
 def merge_people(payload: PersonMergeRequest, request: Request) -> PersonDetailResponse:
     try:
         with request.app.state.db:
-            merged = request.app.state.db.persons.merge_persons(
-                payload.from_person_id,
-                payload.to_person_id,
-            )
+            merged = request.app.state.db.persons.merge_person_ids(payload.person_ids)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -104,16 +101,16 @@ def merge_people(payload: PersonMergeRequest, request: Request) -> PersonDetailR
 def split_person(payload: PersonSplitRequest, request: Request) -> PersonDetailResponse:
     try:
         with request.app.state.db:
-            created = request.app.state.db.persons.split_person(
+            created = request.app.state.db.persons.split_person_into_groups(
                 payload.person_id,
-                payload.face_ids,
+                payload.resolved_groups(),
             )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
-    if created is None:
+    if not created:
         raise HTTPException(status_code=404, detail="person not found")
-    summary = _person_summary(request, created)
+    summary = _person_summary(request, created[-1])
     return PersonDetailResponse(**summary.model_dump())
 
 

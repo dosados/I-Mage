@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import threading
 from pathlib import Path
 
 import numpy as np
@@ -12,7 +13,14 @@ from helpers import configure_scan, make_image_file, register_file, seed_catalog
 from indexing.clip import index_clip_gap, index_clip_image
 from indexing.faces import index_faces_gap, index_faces_image, store_faces
 from indexing.gap import clip_gap_paths, faces_gap_paths, module_gap_paths, yolo_gap_paths
-from indexing.runner import IndexModels, collect_scope_paths, module_stats_in_scope, run_scan
+from indexing.runner import (
+    IndexModels,
+    ScanStopped,
+    collect_scope_paths,
+    module_stats_in_scope,
+    reconcile_catalog,
+    run_scan,
+)
 from indexing.yolo import index_yolo_gap, index_yolo_image
 from ml.faces.base import Face
 from ml.objects.base import Detection
@@ -183,10 +191,12 @@ class TestRunScan:
         self, db: Database, image_dir: Path
     ) -> None:
         paths = [make_image_file(image_dir, f"{i}.jpg", f"p{i}".encode()) for i in range(5)]
-        configure_scan(db, [image_dir])
+        config = configure_scan(db, [image_dir])
+        reconcile_catalog(db, config)
         store = FakeVectorStore()
+        clip = FakeClip()
         models = IndexModels(
-            clip=FakeClip(),
+            clip=clip,
             yolo=FakeYolo(),
             faces=FakeFaces(),
         )
@@ -209,19 +219,126 @@ class TestRunScan:
         with db:
             assert db.images.count_all() == 5
             assert db.images.count_module_done(MODULE_CLIP) == 5
-        assert store.upsert_context_calls == 5
+        assert store.upsert_context_calls == 1
+        assert [len(batch) for batch in clip.encode_images_calls] == [5]
+
+    def test_yolo_indexing_uses_bounded_batches(
+        self, db: Database, image_dir: Path
+    ) -> None:
+        for i in range(35):
+            make_image_file(image_dir, f"{i}.jpg")
+        config = configure_scan(db, [image_dir])
+        reconcile_catalog(db, config)
+        yolo = FakeYolo()
+        results = run_scan(
+            db,
+            FakeVectorStore(),
+            IndexModels(clip=FakeClip(), yolo=yolo, faces=FakeFaces()),
+            config,
+            modules=[MODULE_YOLO],
+            mode="full",
+        )
+        assert results[0].indexed == 35
+        assert [len(batch) for batch in yolo.detect_batch_calls] == [16, 16, 3]
+        with db:
+            assert db.images.count_module_done(MODULE_YOLO) == 35
+
+    def test_yolo_commits_completed_batch_before_stop(
+        self, db: Database, image_dir: Path
+    ) -> None:
+        for i in range(35):
+            make_image_file(image_dir, f"{i}.jpg")
+        config = configure_scan(db, [image_dir])
+        reconcile_catalog(db, config)
+        stop = threading.Event()
+
+        class StopAfterFirstBatch(FakeYolo):
+            def detect_batch(self, images):
+                result = super().detect_batch(images)
+                stop.set()
+                return result
+
+        with pytest.raises(ScanStopped):
+            run_scan(
+                db,
+                FakeVectorStore(),
+                IndexModels(
+                    clip=FakeClip(),
+                    yolo=StopAfterFirstBatch(),
+                    faces=FakeFaces(),
+                ),
+                config,
+                modules=[MODULE_YOLO],
+                mode="full",
+                should_stop=stop.is_set,
+            )
+        with db:
+            assert db.images.count_module_done(MODULE_YOLO) == 16
+
+    def test_faces_indexing_uses_bounded_batches(
+        self, db: Database, image_dir: Path
+    ) -> None:
+        for i in range(35):
+            make_image_file(image_dir, f"{i}.jpg")
+        config = configure_scan(db, [image_dir])
+        reconcile_catalog(db, config)
+        faces = FakeFaces()
+        results = run_scan(
+            db,
+            FakeVectorStore(),
+            IndexModels(clip=FakeClip(), yolo=FakeYolo(), faces=faces),
+            config,
+            modules=[MODULE_FACES],
+            mode="full",
+        )
+        assert results[0].indexed == 35
+        assert [len(batch) for batch in faces.analyze_batch_calls] == [16, 16, 3]
+        with db:
+            assert db.images.count_module_done(MODULE_FACES) == 35
+
+    def test_faces_commits_completed_batch_before_stop(
+        self, db: Database, image_dir: Path
+    ) -> None:
+        for i in range(35):
+            make_image_file(image_dir, f"{i}.jpg")
+        config = configure_scan(db, [image_dir])
+        reconcile_catalog(db, config)
+        stop = threading.Event()
+
+        class StopAfterFirstBatch(FakeFaces):
+            def analyze_batch(self, images, *, should_stop=None):
+                result = super().analyze_batch(images, should_stop=should_stop)
+                stop.set()
+                return result
+
+        with pytest.raises(ScanStopped):
+            run_scan(
+                db,
+                FakeVectorStore(),
+                IndexModels(
+                    clip=FakeClip(),
+                    yolo=FakeYolo(),
+                    faces=StopAfterFirstBatch(),
+                ),
+                config,
+                modules=[MODULE_FACES],
+                mode="full",
+                should_stop=stop.is_set,
+            )
+        with db:
+            assert db.images.count_module_done(MODULE_FACES) == 16
 
     def test_second_scan_has_empty_gap(self, db: Database, image_dir: Path) -> None:
         for i in range(4):
             make_image_file(image_dir, f"{i}.jpg")
-        configure_scan(db, [image_dir])
+        config = configure_scan(db, [image_dir])
+        reconcile_catalog(db, config)
         store = FakeVectorStore()
         models = IndexModels(
             clip=FakeClip(),
             yolo=FakeYolo(),
             faces=FakeFaces(),
         )
-        config = db.get_scan_config()
         run_scan(db, store, models, config, modules=[MODULE_CLIP], mode="full")
         clip = FakeClip()
         models2 = IndexModels(

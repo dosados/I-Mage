@@ -22,7 +22,7 @@ class DetectionService:
             [
                 Detection(
                     image_id=image_id,
-                    label=detection.label,
+                    label=detection.label.strip().lower(),
                     confidence=detection.confidence,
                     bbox_x1=detection.bbox[0],
                     bbox_y1=detection.bbox[1],
@@ -61,7 +61,7 @@ class DetectionService:
             .join(ImageYolo, ImageYolo.image_id == Image.id)
             .where(
                 ImageYolo.status == ModuleStatus.DONE.value,
-                func.lower(Detection.label) == normalized,
+                Detection.label == normalized,
             )
             .group_by(Image.id)
             .order_by(func.max(Detection.confidence).desc())

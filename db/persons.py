@@ -170,27 +170,86 @@ class PersonService:
         self._session.flush()
         return self.get_person(to_person_id)
 
+    def merge_person_ids(self, person_ids: list[str]) -> PersonRecord | None:
+        unique: list[str] = []
+        seen: set[str] = set()
+        for person_id in person_ids:
+            if person_id in seen:
+                continue
+            seen.add(person_id)
+            unique.append(person_id)
+        if len(unique) < 2:
+            raise ValueError("need at least two people to merge")
+
+        records = [self.get_person(person_id) for person_id in unique]
+        if any(record is None for record in records):
+            return None
+
+        named = [record for record in records if record is not None and record.is_named]
+        target_id = named[0].id if named else unique[0]
+        for person_id in unique:
+            if person_id == target_id:
+                continue
+            merged = self.merge_persons(person_id, target_id)
+            if merged is None:
+                return None
+        return self.get_person(target_id)
+
     def split_person(self, person_id: str, face_ids: list[str]) -> PersonRecord | None:
         if not face_ids:
             raise ValueError("face_ids must not be empty")
+        created = self.split_person_into_groups(person_id, [face_ids])
+        return created[0] if created else None
 
+    def split_person_into_groups(
+        self, person_id: str, groups: list[list[str]]
+    ) -> list[PersonRecord]:
         person = self._session.get(Person, person_id)
         if person is None:
-            return None
+            return []
 
-        new_person = self.create_person()
+        used: set[str] = set()
+        cleaned: list[list[str]] = []
+        for group in groups:
+            ids: list[str] = []
+            for face_id in group:
+                if not face_id or face_id in used:
+                    continue
+                assignment = self._session.get(FacePersonAssignment, face_id)
+                if assignment is None or assignment.person_id != person_id:
+                    continue
+                ids.append(face_id)
+                used.add(face_id)
+            if ids:
+                cleaned.append(ids)
+        if not cleaned:
+            raise ValueError("none of the faces belong to this person")
+
         now = utc_now_iso()
-        for face_id in face_ids:
-            assignment = self._session.get(FacePersonAssignment, face_id)
-            if assignment is None or assignment.person_id != person_id:
-                continue
-            assignment.person_id = new_person.id
+        created: list[PersonRecord] = []
+        for ids in cleaned:
+            new_person = self.create_person()
+            for face_id in ids:
+                assignment = self._session.get(FacePersonAssignment, face_id)
+                if assignment is None:
+                    continue
+                assignment.person_id = new_person.id
+                assignment.source = "manual_split"
+                assignment.assigned_at = now
+            created.append(self.get_person(new_person.id))
+
+        remaining = self._session.scalars(
+            select(FacePersonAssignment).where(FacePersonAssignment.person_id == person_id)
+        ).all()
+        for assignment in remaining:
             assignment.source = "manual_split"
             assignment.assigned_at = now
-
         person.updated_at = now
         self._session.flush()
-        return self.get_person(new_person.id)
+        if not remaining and not person.is_named:
+            self._session.delete(person)
+            self._session.flush()
+        return [record for record in created if record is not None]
 
     def assign_faces(
         self,

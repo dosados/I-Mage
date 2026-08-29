@@ -21,18 +21,26 @@ from api.schemas import (
     ImageMatch,
     SearchRequest,
     SearchResponse,
+    RevealFileRequest,
+    UnifiedMatchResponse,
+    UnifiedSearchRequest,
+    UnifiedSearchResponse,
 )
 from api.search import (
     iter_class_search_events,
     iter_description_search_events,
     iter_face_search_events,
+    iter_unified_search_events,
     run_embed_query_face,
     run_search_by_class,
     run_search_by_description,
     run_search_by_face,
+    run_unified_search,
 )
 from api.settings import router as settings_router
 from api.uploads import read_upload_image
+from api.keywords import keywords_payload
+from io_utils.fs import reveal_in_file_manager
 from db.database import Database
 from db.scan_config import default_scan_config
 from indexing.background_indexer import background_indexer_loop
@@ -168,6 +176,18 @@ def get_image(filename: str, request: Request) -> FileResponse:
     return FileResponse(resolve_image_path(request, filename))
 
 
+@app.post("/files/reveal")
+def reveal_file(payload: RevealFileRequest, request: Request) -> dict[str, object]:
+    """Open the catalog image in the desktop file manager, or at least return its path."""
+    with request.app.state.db:
+        record = request.app.state.db.images.get_by_id(payload.image_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="image not found")
+    path = Path(record.path)
+    opened = reveal_in_file_manager(path) if path.exists() else False
+    return {"path": str(path), "opened": opened, "exists": path.exists()}
+
+
 @app.get("/health")
 def health(request: Request) -> dict[str, str]:
     if not hasattr(request.app.state, "model"):
@@ -182,6 +202,67 @@ def health(request: Request) -> dict[str, str]:
     if not store.available and store.last_error:
         result["qdrant_error"] = store.last_error
     return result
+
+
+@app.get("/keywords")
+def list_keywords() -> dict:
+    return keywords_payload()
+
+
+@app.post("/search/unified", response_model=UnifiedSearchResponse)
+def search_unified(
+    request: UnifiedSearchRequest,
+    http_request: Request,
+) -> UnifiedSearchResponse:
+    try:
+        result = run_unified_search(
+            request.query,
+            http_request.app.state.model,
+            http_request.app.state.objects_model,
+            http_request.app.state.db,
+            http_request.app.state.vector_store,
+            labels=request.labels,
+            limit=request.limit,
+            k=request.k,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    return UnifiedSearchResponse(
+        query=result.query,
+        labels=result.labels,
+        matches=[
+            UnifiedMatchResponse(
+                path=str(match.path),
+                clip_score=match.clip_score,
+                yolo=match.yolo,
+                sources=match.sources,
+                rank_score=match.rank_score,
+            )
+            for match in result.matches
+        ],
+    )
+
+
+@app.post("/search/unified/stream")
+def search_unified_stream(
+    request: UnifiedSearchRequest,
+    http_request: Request,
+) -> StreamingResponse:
+    def event_stream() -> Iterator[bytes]:
+        for event in iter_unified_search_events(
+            request.query,
+            http_request.app.state.model,
+            http_request.app.state.objects_model,
+            http_request.app.state.db,
+            http_request.app.state.vector_store,
+            labels=request.labels,
+            limit=request.limit,
+            k=request.k,
+        ):
+            yield (json.dumps(event, ensure_ascii=False) + "\n").encode("utf-8")
+
+    return StreamingResponse(event_stream(), media_type="application/x-ndjson")
 
 
 @app.post("/search", response_model=SearchResponse)

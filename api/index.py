@@ -113,6 +113,19 @@ async def run_background_gap(request: Request) -> JSONResponse:
     return JSONResponse(status_code=202, content={"status": "started", "mode": "gap"})
 
 
+@router.post("/reconcile", status_code=202)
+async def reconcile_catalog(request: Request) -> JSONResponse:
+    executor = _get_executor(request)
+    try:
+        run_id = await executor.start_catalog_reconcile()
+    except IndexRunConflictError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    return JSONResponse(
+        status_code=202,
+        content={"run_id": run_id, "module": "catalog", "mode": "reconcile"},
+    )
+
+
 @router.get("/status", response_model=IndexStatusResponse)
 def index_status(
     request: Request,
@@ -158,6 +171,7 @@ def index_status(
         module_runs=module_runs,
         background=_background_status(request),
         scope_total=scope_total,
+        gpu=_get_executor(request).gpu_status(),
     )
 
 

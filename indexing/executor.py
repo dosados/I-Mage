@@ -8,8 +8,14 @@ from typing import TYPE_CHECKING
 from db.database import Database
 from db.types import MODULE_CLIP, MODULE_FACES, MODULE_YOLO
 from indexing.cluster import run_face_clustering
-from indexing.ml_lock import get_ml_lock
-from indexing.runner import IndexModels, ScanResult, ScanStopped, run_scan
+from indexing.gpu_scheduler import GpuScheduler, get_gpu_scheduler
+from indexing.runner import (
+    IndexModels,
+    ScanResult,
+    ScanStopped,
+    reconcile_catalog,
+    run_scan,
+)
 
 if TYPE_CHECKING:
     from vectors.store import VectorStore
@@ -17,6 +23,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 VALID_MODULES = frozenset({MODULE_YOLO, MODULE_CLIP, MODULE_FACES})
+CATALOG_MODULE = "catalog"
 
 
 class IndexRunConflictError(RuntimeError):
@@ -24,23 +31,31 @@ class IndexRunConflictError(RuntimeError):
 
 
 class IndexExecutor:
-    """Coordinates index runs: per-module locks, ML lock, tracked background tasks."""
+    """Coordinates catalog jobs, index runs and the shared GPU scheduler."""
 
     def __init__(
         self,
         db: Database,
         vector_store: VectorStore,
         models: IndexModels,
+        scheduler: GpuScheduler | None = None,
     ) -> None:
         self._db = db
         self._vector_store = vector_store
         self._models = models
+        self._scheduler = scheduler or get_gpu_scheduler()
         self._module_locks = {module: threading.Lock() for module in VALID_MODULES}
+        self._catalog_lock = threading.Lock()
         self._tasks: dict[str, asyncio.Task] = {}
         self._stop_event = threading.Event()
 
     def has_manual_run_in_progress(self) -> bool:
-        return any(lock.locked() for lock in self._module_locks.values())
+        return self._catalog_lock.locked() or any(
+            lock.locked() for lock in self._module_locks.values()
+        )
+
+    def gpu_status(self) -> dict[str, object]:
+        return self._scheduler.snapshot()
 
     async def shutdown(self, *, timeout: float = 30.0) -> None:
         """Signal in-flight scans to stop and wait for their tasks to finish.
@@ -61,6 +76,8 @@ class IndexExecutor:
     async def start_full_run(self, module: str) -> str:
         if module not in VALID_MODULES:
             raise ValueError(f"unknown module: {module}")
+        if self._catalog_lock.locked():
+            raise IndexRunConflictError("catalog reconcile already in progress")
 
         lock = self._module_locks[module]
         if not lock.acquire(blocking=False):
@@ -84,6 +101,8 @@ class IndexExecutor:
         is tracked as an index_runs row (phase=clustering) so the UI reads its
         progress from /index/status like any other phase.
         """
+        if self._catalog_lock.locked():
+            raise IndexRunConflictError("catalog reconcile already in progress")
         lock = self._module_locks[MODULE_FACES]
         if not lock.acquire(blocking=False):
             raise IndexRunConflictError("faces index run already in progress")
@@ -99,8 +118,29 @@ class IndexExecutor:
         task.add_done_callback(lambda _task: self._tasks.pop(run_id, None))
         return run_id
 
-    async def start_background_gap(self) -> None:
+    async def start_catalog_reconcile(self) -> str:
+        if not self._catalog_lock.acquire(blocking=False):
+            raise IndexRunConflictError("catalog reconcile already in progress")
         if any(lock.locked() for lock in self._module_locks.values()):
+            self._catalog_lock.release()
+            raise IndexRunConflictError("index run already in progress")
+        try:
+            run_id = await asyncio.to_thread(self._create_catalog_run)
+        except Exception:
+            self._catalog_lock.release()
+            raise
+        task = asyncio.create_task(self._run_catalog_reconcile(run_id))
+        self._tasks[run_id] = task
+        task.add_done_callback(lambda _task: self._tasks.pop(run_id, None))
+        return run_id
+
+    async def start_background_gap(self) -> None:
+        existing = self._tasks.get("background-gap")
+        if existing is not None and not existing.done():
+            raise IndexRunConflictError("background index run already in progress")
+        if self._catalog_lock.locked() or any(
+            lock.locked() for lock in self._module_locks.values()
+        ):
             raise IndexRunConflictError("manual index run already in progress")
 
         with self._db:
@@ -128,9 +168,6 @@ class IndexExecutor:
             if active is not None:
                 raise IndexRunConflictError(f"{module} index run already in progress")
 
-            # Don't walk the filesystem here (that duplicated run_scan's scan and
-            # cost ~a minute before the request even returned). The reconcile
-            # phase sets the real total; start at 0 so the UI shows "Сверка…".
             run = self._db.index_runs.create(
                 module=module,
                 mode="full",
@@ -149,6 +186,17 @@ class IndexExecutor:
                 mode="cluster",
                 progress_total=100,
                 phase="clustering",
+            )
+            return run.id
+
+    def _create_catalog_run(self) -> str:
+        with self._db:
+            if self._db.index_runs.get_active() is not None:
+                raise IndexRunConflictError("index run already in progress")
+            run = self._db.index_runs.create(
+                module=CATALOG_MODULE,
+                mode="reconcile",
+                progress_total=0,
             )
             return run.id
 
@@ -203,29 +251,63 @@ class IndexExecutor:
         finally:
             lock.release()
 
+    async def _run_catalog_reconcile(self, run_id: str) -> None:
+        try:
+            await asyncio.to_thread(self._execute_catalog_reconcile, run_id)
+        finally:
+            self._catalog_lock.release()
+
     def _execute_cluster(self, *, run_id: str, regroup: bool) -> None:
-        with get_ml_lock():
-            try:
-                run_face_clustering(
-                    self._db,
-                    self._vector_store,
-                    run_id=run_id,
-                    regroup=regroup,
-                    should_stop=self._stop_event.is_set,
+        try:
+            run_face_clustering(
+                self._db,
+                self._vector_store,
+                run_id=run_id,
+                regroup=regroup,
+                should_stop=self._stop_event.is_set,
+            )
+            with self._db:
+                self._db.index_runs.mark_done(run_id)
+        except ScanStopped:
+            logger.info("cluster run stopped (run_id=%s)", run_id)
+            with self._db:
+                self._db.index_runs.mark_failed(
+                    run_id, "Остановлено при завершении сервера — запустите заново"
                 )
-                with self._db:
-                    self._db.index_runs.mark_done(run_id)
-            except ScanStopped:
-                logger.info("cluster run stopped (run_id=%s)", run_id)
-                with self._db:
-                    self._db.index_runs.mark_failed(
-                        run_id, "Остановлено при завершении сервера — запустите заново"
-                    )
-            except Exception as exc:
-                logger.exception("cluster run failed (run_id=%s)", run_id)
-                with self._db:
-                    self._db.index_runs.mark_failed(run_id, str(exc))
-                raise
+        except Exception as exc:
+            logger.exception("cluster run failed (run_id=%s)", run_id)
+            with self._db:
+                self._db.index_runs.mark_failed(run_id, str(exc))
+            raise
+
+    def _execute_catalog_reconcile(self, run_id: str) -> None:
+        try:
+            with self._db:
+                config = self._db.get_scan_config()
+            result = reconcile_catalog(
+                self._db,
+                config,
+                run_id=run_id,
+                should_stop=self._stop_event.is_set,
+            )
+            with self._db:
+                self._db.index_runs.mark_done(
+                    run_id,
+                    summary=(
+                        f"Каталог: {result.total}; обновлено: {result.upserted}; "
+                        f"удалено: {result.removed}"
+                    ),
+                )
+        except ScanStopped:
+            with self._db:
+                self._db.index_runs.mark_failed(
+                    run_id, "Остановлено при завершении сервера — запустите заново"
+                )
+        except Exception as exc:
+            logger.exception("catalog reconcile failed (run_id=%s)", run_id)
+            with self._db:
+                self._db.index_runs.mark_failed(run_id, str(exc))
+            raise
 
     def _execute_scan(
         self,
@@ -236,69 +318,67 @@ class IndexExecutor:
         remove_missing: bool,
         background: bool = False,
     ) -> None:
-        with get_ml_lock():
-            try:
-                with self._db:
-                    config = self._db.get_scan_config()
+        try:
+            with self._db:
+                config = self._db.get_scan_config()
 
-                if background:
-                    modules = [
-                        item
-                        for item in config.background_modules
-                        if item in VALID_MODULES
-                    ]
-                else:
-                    modules = [module] if module is not None else []
+            if background:
+                modules = [
+                    item
+                    for item in config.background_modules
+                    if item in VALID_MODULES
+                ]
+            else:
+                modules = [module] if module is not None else []
 
-                if not modules:
-                    if run_id is not None:
-                        with self._db:
-                            self._db.index_runs.mark_done(run_id)
-                    return
+            if not modules:
+                if run_id is not None:
+                    with self._db:
+                        self._db.index_runs.mark_done(run_id)
+                return
 
-                results = run_scan(
+            results = run_scan(
+                self._db,
+                self._vector_store,
+                self._models,
+                config,
+                modules=modules,
+                mode=mode,
+                remove_missing=remove_missing,
+                run_id=run_id,
+                should_stop=self._stop_event.is_set,
+                scheduler=self._scheduler,
+            )
+
+            # Face clustering remains part of the tracked faces run, but catalog
+            # reconciliation is now an explicit, independent operation.
+            if run_id is not None and not background and MODULE_FACES in modules:
+                run_face_clustering(
                     self._db,
                     self._vector_store,
-                    self._models,
-                    config,
-                    modules=modules,
-                    mode=mode,
-                    remove_missing=remove_missing,
                     run_id=run_id,
+                    regroup=False,
                     should_stop=self._stop_event.is_set,
                 )
 
-                # A faces full run is a 3-phase pipeline: reconcile -> indexing ->
-                # clustering. Clustering runs here (same run_id, same ML lock) so
-                # "Поиск людей" is a real, tracked stage instead of a separate
-                # manual step whose state only lived in the browser.
-                if run_id is not None and not background and MODULE_FACES in modules:
-                    run_face_clustering(
-                        self._db,
-                        self._vector_store,
-                        run_id=run_id,
-                        regroup=False,
-                        should_stop=self._stop_event.is_set,
-                    )
+            with self._db:
+                if run_id is not None:
+                    self._finish_run(self._db, run_id, results)
+                if background:
+                    from db.models import utc_now_iso
 
+                    self._db.scan_config.update_last_background_run(utc_now_iso())
+        except ScanStopped:
+            logger.info("index run stopped (run_id=%s, module=%s)", run_id, module)
+            if run_id is not None:
                 with self._db:
-                    if run_id is not None:
-                        self._finish_run(self._db, run_id, results)
-                    if background:
-                        from db.models import utc_now_iso
-
-                        self._db.scan_config.update_last_background_run(utc_now_iso())
-            except ScanStopped:
-                logger.info("index run stopped (run_id=%s, module=%s)", run_id, module)
-                if run_id is not None:
-                    with self._db:
-                        self._db.index_runs.mark_failed(
-                            run_id, "Остановлено при завершении сервера — запустите прогон заново"
-                        )
-                return
-            except Exception as exc:
-                logger.exception("index run failed (run_id=%s, module=%s)", run_id, module)
-                if run_id is not None:
-                    with self._db:
-                        self._db.index_runs.mark_failed(run_id, str(exc))
-                raise
+                    self._db.index_runs.mark_failed(
+                        run_id, "Остановлено при завершении сервера — запустите прогон заново"
+                    )
+            return
+        except Exception as exc:
+            logger.exception("index run failed (run_id=%s, module=%s)", run_id, module)
+            if run_id is not None:
+                with self._db:
+                    self._db.index_runs.mark_failed(run_id, str(exc))
+            raise

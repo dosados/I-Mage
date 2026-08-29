@@ -127,17 +127,29 @@ class VectorStore:
         *,
         model_version: str,
     ) -> None:
+        self.upsert_contexts(
+            [(image_id, embedding)],
+            model_version=model_version,
+        )
+
+    def upsert_contexts(
+        self,
+        items: Sequence[tuple[str, np.ndarray]],
+        *,
+        model_version: str,
+    ) -> None:
         if not self.available:
             raise RuntimeError("qdrant is not available")
+        if not items:
+            return
 
         assert self._client is not None
-        vector = np.asarray(embedding, dtype=np.float32).reshape(-1)
-        if vector.shape[0] != CLIP_VECTOR_DIM:
-            raise ValueError(f"context vector must have dimension {CLIP_VECTOR_DIM}")
-
-        self._client.upsert(
-            collection_name=CONTEXT_COLLECTION,
-            points=[
+        points: list[PointStruct] = []
+        for image_id, embedding in items:
+            vector = np.asarray(embedding, dtype=np.float32).reshape(-1)
+            if vector.shape[0] != CLIP_VECTOR_DIM:
+                raise ValueError(f"context vector must have dimension {CLIP_VECTOR_DIM}")
+            points.append(
                 PointStruct(
                     id=context_point_id(image_id, model_version),
                     vector=vector.tolist(),
@@ -146,7 +158,10 @@ class VectorStore:
                         "model_version": model_version,
                     },
                 )
-            ],
+            )
+        self._client.upsert(
+            collection_name=CONTEXT_COLLECTION,
+            points=points,
         )
 
     def upsert_faces(

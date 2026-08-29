@@ -151,7 +151,7 @@ class TestSearchByFaceIndexed:
                 allow_bruteforce_fallback=False,
             )
 
-    def test_gap_is_indexed_then_searched(
+    def test_gap_is_not_indexed_by_search(
         self, db: Database, image_dir: Path
     ) -> None:
         paths = [_rgb_file(image_dir, f"{i}.jpg") for i in range(3)]
@@ -167,9 +167,9 @@ class TestSearchByFaceIndexed:
 
         faces.analyze_calls.clear()
         result = run_search_by_face(unit_vec(0), faces, db, store, k=5, threshold=-1.0)
-        assert len(faces.analyze_calls) == 1  # only the gap image
+        assert faces.analyze_calls == []
         assert result.matches
-        assert db.images.count_module_done(MODULE_FACES) == 3
+        assert db.images.count_module_done(MODULE_FACES) == 2
 
     def test_stream_events_order(self, db: Database, image_dir: Path) -> None:
         path = _rgb_file(image_dir, "a.jpg")
@@ -184,9 +184,7 @@ class TestSearchByFaceIndexed:
             iter_face_search_events(unit_vec(0), faces, db, store, k=3, threshold=0.0)
         )
         stages = [(e["stage"], e["status"]) for e in events]
-        assert stages[0] == ("reconcile", "running")
-        assert ("reconcile", "done") in stages
-        assert ("index_gap", "done") in stages
+        assert stages[0] == ("search", "running")
         assert ("search", "running") in stages
         assert stages[-1][0] == "done"
         assert "matches" in events[-1]
@@ -219,10 +217,10 @@ class TestSearchDescriptionAndClass:
         assert clip.encode_text_calls == ["cat"]
         assert store.search_context_calls == 1
         assert len(result.matches) <= 2
-        assert ("reconcile", "done") in progress
+        assert ("catalog", "done") in progress
         assert ("search", "done") in progress
 
-    def test_class_search_indexes_gap_then_queries(
+    def test_class_search_only_queries_existing_index(
         self, db: Database, image_dir: Path
     ) -> None:
         path = _rgb_file(image_dir, "pet.jpg")
@@ -234,14 +232,14 @@ class TestSearchDescriptionAndClass:
         )
         with db:
             register_file(db, path)
+            index_yolo_image(db, path, yolo, model_version=yolo.model_name)
 
+        yolo.detect_calls.clear()
         result = run_search_by_class("cat", yolo, db, k=5)
         assert result.matches[0].path == path
         assert result.matches[0].confidence == 0.91
-        assert len(yolo.detect_calls) == 1
+        assert yolo.detect_calls == []
 
-        # Second call: no re-detect.
-        yolo.detect_calls.clear()
         again = run_search_by_class("cat", yolo, db, k=5)
         assert again.matches
         assert yolo.detect_calls == []
@@ -270,7 +268,7 @@ class TestSearchDescriptionAndClass:
             iter_description_search_events("cat", clip, db, store, k=3)
         )
         stages = [e["stage"] for e in events]
-        assert stages[0] == "reconcile"
+        assert stages[0] == "search"
         assert "done" in stages
         assert events[-1]["stage"] == "done"
 
@@ -286,9 +284,12 @@ class TestSearchDescriptionAndClass:
         )
         with db:
             register_file(db, path)
+            index_yolo_image(db, path, yolo, model_version=yolo.model_name)
+        yolo.detect_calls.clear()
         events = list(iter_class_search_events("dog", yolo, db, k=5))
         assert events[-1]["stage"] == "done"
         assert events[-1]["matches"]
+        assert yolo.detect_calls == []
 
         path = _rgb_file(image_dir, "face.jpg")
         faces = FakeFaces()

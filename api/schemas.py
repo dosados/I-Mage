@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 class SearchRequest(BaseModel):
     query: str = Field(..., min_length=1, examples=["кот на диване"])
@@ -90,6 +90,39 @@ class FaceSearchResponse(BaseModel):
     matches: list[FaceImageMatch]
 
 
+class UnifiedSearchRequest(BaseModel):
+    query: str = Field(..., min_length=1, examples=["sunset with airplane"])
+    labels: list[str] | None = Field(
+        default=None,
+        description="YOLO object labels; auto-detected from query when omitted",
+    )
+    limit: int | None = Field(
+        default=None,
+        ge=1,
+        description="Max number of images in scope (for testing)",
+    )
+    k: int = Field(
+        default=10,
+        ge=1,
+        le=50,
+        description="Max unified results to return after merging sources",
+    )
+
+
+class UnifiedMatchResponse(BaseModel):
+    path: str
+    clip_score: float | None = None
+    yolo: dict[str, float] = Field(default_factory=dict)
+    sources: list[str] = Field(default_factory=list)
+    rank_score: float = 0.0
+
+
+class UnifiedSearchResponse(BaseModel):
+    query: str
+    labels: list[str]
+    matches: list[UnifiedMatchResponse]
+
+
 class ScanConfigResponse(BaseModel):
     include_directories: list[str]
     ignore_globs: list[str]
@@ -133,6 +166,7 @@ class IndexStatusResponse(BaseModel):
     module_runs: dict[str, ModuleRunStatus] = Field(default_factory=dict)
     background: dict
     scope_total: int
+    gpu: dict = Field(default_factory=dict)
 
 
 class FacesReadyResponse(BaseModel):
@@ -171,13 +205,28 @@ class PersonRenameRequest(BaseModel):
 
 
 class PersonMergeRequest(BaseModel):
-    from_person_id: str
-    to_person_id: str
+    person_ids: list[str] = Field(..., min_length=2)
 
 
 class PersonSplitRequest(BaseModel):
     person_id: str
-    face_ids: list[str] = Field(..., min_length=1)
+    groups: list[list[str]] = Field(default_factory=list)
+    face_ids: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def require_faces(self) -> "PersonSplitRequest":
+        if not any(self.groups) and not self.face_ids:
+            raise ValueError("groups or face_ids required")
+        return self
+
+    def resolved_groups(self) -> list[list[str]]:
+        if any(self.groups):
+            return [group for group in self.groups if group]
+        return [self.face_ids]
+
+
+class RevealFileRequest(BaseModel):
+    image_id: str = Field(..., min_length=1)
 
 
 class PersonFaceResponse(BaseModel):

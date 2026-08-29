@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import torch
 from PIL import Image
 from ultralytics import YOLO
 
@@ -24,12 +25,17 @@ class YoloObjectsRetriever(ObjectsRetriever):
         self.conf = conf
         self.iou = iou
         self.imgsz = imgsz
-        self.device = device
+        self.device = device or ("cuda:0" if torch.cuda.is_available() else "cpu")
         self.model = YOLO(model_name)
 
     def detect(self, image: ImageInput) -> list[Detection]:
+        return self.detect_batch([image])[0]
+
+    def detect_batch(self, images: list[ImageInput]) -> list[list[Detection]]:
+        if not images:
+            return []
         results = self.model.predict(
-            source=self._to_source(image),
+            source=[self._to_source(image) for image in images],
             conf=self.conf,
             iou=self.iou,
             imgsz=self.imgsz,
@@ -37,23 +43,25 @@ class YoloObjectsRetriever(ObjectsRetriever):
             verbose=False,
         )
 
+        return [self._parse_result(result) for result in results]
+
+    @staticmethod
+    def _parse_result(result) -> list[Detection]:
         detections: list[Detection] = []
-        for result in results:
-            if result.boxes is None:
-                continue
+        if result.boxes is None:
+            return detections
 
-            names = result.names
-            for box in result.boxes:
-                cls_id = int(box.cls.item())
-                x1, y1, x2, y2 = box.xyxy[0].tolist()
-                detections.append(
-                    Detection(
-                        label=names[cls_id],
-                        confidence=float(box.conf.item()),
-                        bbox=(x1, y1, x2, y2),
-                    )
+        names = result.names
+        for box in result.boxes:
+            cls_id = int(box.cls.item())
+            x1, y1, x2, y2 = box.xyxy[0].tolist()
+            detections.append(
+                Detection(
+                    label=names[cls_id],
+                    confidence=float(box.conf.item()),
+                    bbox=(x1, y1, x2, y2),
                 )
-
+            )
         detections.sort(key=lambda item: item.confidence, reverse=True)
         return detections
 

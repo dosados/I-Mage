@@ -58,14 +58,22 @@ class CLIPEmbeddingModel(EmbeddingModel):
         return self._normalize(self._extract_features(outputs))
 
     def encode_image(self, image: ImageInput) -> np.ndarray:
-        pil_image = self._load_image(image)
-        inputs = self.processor(images=pil_image, return_tensors="pt")
+        return self.encode_images([image])[0]
+
+    def encode_images(self, images: list[ImageInput]) -> list[np.ndarray]:
+        if not images:
+            return []
+        pil_images = [self._load_image(image) for image in images]
+        inputs = self.processor(images=pil_images, return_tensors="pt")
         inputs = {key: value.to(self.device) for key, value in inputs.items()}
 
         with torch.no_grad():
             outputs = self.model.get_image_features(**inputs)
 
-        return self._normalize(self._extract_features(outputs))
+        features = self._extract_features(outputs)
+        normalized = features / features.norm(dim=-1, keepdim=True)
+        array = normalized.cpu().numpy().astype(np.float32)
+        return [row for row in array]
 
     def _load_image(self, image: ImageInput) -> Image.Image:
         if isinstance(image, Image.Image):
