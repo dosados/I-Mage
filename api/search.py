@@ -244,13 +244,17 @@ def _rank_unified(
     yolo: dict[str, float],
     sources: list[str],
 ) -> float:
-    has_semantic = "semantic" in sources
-    has_object = "object" in sources
+    """Return an ordering score for the unified search feed.
+
+    Every selected object label matched by an image is a separate relevance
+    tier. A semantic score can promote an image within its object-match tier,
+    but cannot move an image matching fewer selected labels above it.
+    """
+    del sources
+    object_matches = len(yolo)
     clip = clip_score or 0.0
     yolo_max = max(yolo.values()) if yolo else 0.0
-    primary = max(clip, yolo_max)
-    bonus = 1.0 if has_semantic and has_object else 0.0
-    return bonus + primary
+    return object_matches * 100.0 + clip * 10.0 + yolo_max
 
 
 def _merge_unified_matches(
@@ -327,38 +331,38 @@ def run_unified_search(
 ) -> UnifiedSearchResult:
     del retriever
     normalized_query = query.strip()
-    if not normalized_query:
-        raise ValueError("query must not be empty")
-
     active_labels = _resolve_unified_labels(normalized_query, labels)
+    if not normalized_query and not active_labels:
+        raise ValueError("query or object label is required")
 
     paths = _resolve_paths(db, limit=limit)
     path_set = set(paths) if limit is not None else None
     _emit(on_progress, "catalog", "done", total=len(paths))
 
-    _emit(on_progress, "search", "running", source="semantic")
     clip_matches: list[ImageMatch] = []
-    if vector_store.available and paths:
-        with get_gpu_scheduler().acquire(
-            "search:clip-text",
-            priority=GpuScheduler.INTERACTIVE,
-        ):
-            query_embedding = model.encode_text(normalized_query)
-        with db:
-            id_to_path = db.images.id_to_path_for_scope(paths)
-        hits = vector_store.search_context(
-            query_embedding,
-            list(id_to_path.keys()) if id_to_path else None,
-            k=k,
-        )
-        clip_matches = [
-            ImageMatch(path=id_to_path[hit.image_id], score=hit.score)
-            for hit in hits
-            if hit.image_id in id_to_path
-        ]
-    elif not vector_store.available:
-        raise ValueError("Qdrant unavailable — CLIP index required for search")
-    _emit(on_progress, "search", "done", source="semantic", matches=len(clip_matches))
+    if normalized_query:
+        _emit(on_progress, "search", "running", source="semantic")
+        if vector_store.available and paths:
+            with get_gpu_scheduler().acquire(
+                "search:clip-text",
+                priority=GpuScheduler.INTERACTIVE,
+            ):
+                query_embedding = model.encode_text(normalized_query)
+            with db:
+                id_to_path = db.images.id_to_path_for_scope(paths)
+            hits = vector_store.search_context(
+                query_embedding,
+                list(id_to_path.keys()) if id_to_path else None,
+                k=k,
+            )
+            clip_matches = [
+                ImageMatch(path=id_to_path[hit.image_id], score=hit.score)
+                for hit in hits
+                if hit.image_id in id_to_path
+            ]
+        elif not vector_store.available:
+            raise ValueError("Qdrant unavailable — CLIP index required for search")
+        _emit(on_progress, "search", "done", source="semantic", matches=len(clip_matches))
 
     yolo_by_label: dict[str, list[ClassSearchMatch]] = {}
     for label in active_labels:

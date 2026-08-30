@@ -6,6 +6,8 @@ import numpy as np
 import pytest
 
 from api.search import (
+    ClassSearchMatch,
+    _merge_unified_matches,
     iter_face_search_events,
     run_embed_query_face,
     run_search_by_class,
@@ -23,6 +25,7 @@ from ml.faces.base import Face
 from ml.faces.service import encode_query_face, search_by_face
 from ml.objects.base import Detection
 from PIL import Image
+from ml.embeddings.service import ImageMatch
 
 
 def _rgb_file(directory: Path, name: str, color: tuple[int, int, int] = (10, 20, 30)) -> Path:
@@ -191,6 +194,40 @@ class TestSearchByFaceIndexed:
 
 
 class TestSearchDescriptionAndClass:
+
+    def test_unified_ranking_prioritizes_object_overlap_then_clip_score(self) -> None:
+        both = Path("both.jpg")
+        cat_with_context = Path("cat-with-context.jpg")
+        dog_only = Path("dog-only.jpg")
+        context_only = Path("context-only.jpg")
+
+        matches = _merge_unified_matches(
+            [
+                ImageMatch(path=both, score=0.20),
+                ImageMatch(path=cat_with_context, score=0.95),
+                ImageMatch(path=dog_only, score=0.10),
+                ImageMatch(path=context_only, score=0.99),
+            ],
+            {
+                "cat": [
+                    ClassSearchMatch(path=both, confidence=0.50),
+                    ClassSearchMatch(path=cat_with_context, confidence=0.99),
+                ],
+                "dog": [
+                    ClassSearchMatch(path=both, confidence=0.40),
+                    ClassSearchMatch(path=dog_only, confidence=0.98),
+                ],
+            },
+            k=10,
+        )
+
+        assert [match.path for match in matches] == [
+            both,
+            cat_with_context,
+            dog_only,
+            context_only,
+        ]
+
     def test_description_uses_vector_index(
         self, db: Database, image_dir: Path
     ) -> None:

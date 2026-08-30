@@ -93,8 +93,8 @@ COCO_CLASS_SET = frozenset(COCO_CLASSES)
 _COCO_BY_LENGTH = sorted(COCO_CLASSES, key=len, reverse=True)
 
 _KEYWORD_GROUPS: dict[str, tuple[str, ...]] = {
-    "Люди": ("person",),
-    "Транспорт": (
+    "People": ("person",),
+    "Transport": (
         "bicycle",
         "car",
         "motorcycle",
@@ -104,7 +104,7 @@ _KEYWORD_GROUPS: dict[str, tuple[str, ...]] = {
         "truck",
         "boat",
     ),
-    "Животные": (
+    "Animals": (
         "bird",
         "cat",
         "dog",
@@ -116,7 +116,7 @@ _KEYWORD_GROUPS: dict[str, tuple[str, ...]] = {
         "zebra",
         "giraffe",
     ),
-    "Еда": (
+    "Food": (
         "banana",
         "apple",
         "sandwich",
@@ -128,7 +128,7 @@ _KEYWORD_GROUPS: dict[str, tuple[str, ...]] = {
         "donut",
         "cake",
     ),
-    "Мебель и интерьер": (
+    "Furniture and interior": (
         "chair",
         "couch",
         "bed",
@@ -139,7 +139,7 @@ _KEYWORD_GROUPS: dict[str, tuple[str, ...]] = {
         "clock",
         "vase",
     ),
-    "Электроника": (
+    "Electronics": (
         "laptop",
         "mouse",
         "remote",
@@ -150,14 +150,14 @@ _KEYWORD_GROUPS: dict[str, tuple[str, ...]] = {
         "toaster",
         "refrigerator",
     ),
-    "Улица": (
+    "Street": (
         "traffic light",
         "fire hydrant",
         "stop sign",
         "parking meter",
         "bench",
     ),
-    "Спорт и отдых": (
+    "Sports and leisure": (
         "frisbee",
         "skis",
         "snowboard",
@@ -169,14 +169,14 @@ _KEYWORD_GROUPS: dict[str, tuple[str, ...]] = {
         "surfboard",
         "tennis racket",
     ),
-    "Сумки и аксессуары": (
+    "Bags and accessories": (
         "backpack",
         "umbrella",
         "handbag",
         "tie",
         "suitcase",
     ),
-    "Посуда": (
+    "Tableware": (
         "bottle",
         "wine glass",
         "cup",
@@ -186,7 +186,7 @@ _KEYWORD_GROUPS: dict[str, tuple[str, ...]] = {
         "bowl",
         "sink",
     ),
-    "Прочее": (
+    "Other": (
         "book",
         "scissors",
         "teddy bear",

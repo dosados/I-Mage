@@ -310,6 +310,37 @@ class TestSearchApi:
         # Union may include single-source matches; at least one path from each module type.
         assert any("semantic" in m["sources"] for m in body["matches"]) or body["matches"]
 
+    def test_unified_search_by_selected_class_without_query(self, api_env) -> None:
+        client = api_env["client"]
+        photo_dir = api_env["dir"]
+        store = api_env["store"]
+        yolo = api_env["yolo"]
+        path = _save_rgb(photo_dir, "dog.jpg")
+        yolo.set_detections(
+            path,
+            [Detection(label="dog", confidence=0.91, bbox=(0, 0, 5, 5))],
+        )
+        db = Database(path=api_env["db_path"], vector_store=store)
+        with db:
+            from indexing.yolo import index_yolo_image
+
+            register_file(db, path)
+            index_yolo_image(db, path, yolo, model_version=yolo.model_name)
+        db.close()
+
+        response = client.post(
+            "/search/unified",
+            json={"query": "", "labels": ["dog"], "k": 10},
+        )
+
+        assert response.status_code == 200, response.text
+        body = response.json()
+        assert body["labels"] == ["dog"]
+        assert body["matches"][0]["path"] == str(path)
+        assert body["matches"][0]["clip_score"] is None
+        assert body["matches"][0]["yolo"] == {"dog": 0.91}
+        assert body["matches"][0]["sources"] == ["object"]
+
     def test_keywords_endpoint(self, api_env) -> None:
         response = api_env["client"].get("/keywords")
         assert response.status_code == 200

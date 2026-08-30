@@ -537,77 +537,77 @@
     <header class="topbar">
       <div>
         <h1>I-Mage</h1>
-        <p class="subtitle">Найдите фото по описанию — мы поймём и смысл, и объекты на снимке</p>
+        <p class="subtitle">Find photos by description — search by meaning and objects in the image</p>
       </div>
-      <button type="button" class="icon-btn" id="open-settings" title="Настройки" aria-label="Настройки">⚙</button>
+      <button type="button" class="icon-btn" id="open-settings" title="Settings" aria-label="Settings">⚙</button>
     </header>
 
     <section class="flow" id="flow">
       <div class="flow-step">
         <div class="flow-icon">1</div>
-        <strong>Опишите</strong>
-        <span>Напишите, что ищете</span>
+        <strong>Describe</strong>
+        <span>Tell us what you are looking for</span>
       </div>
       <div class="flow-step">
         <div class="flow-icon">2</div>
-        <strong>Поймём</strong>
-        <span>Смысл + объекты (dog, airplane…)</span>
+        <strong>Understand</strong>
+        <span>Meaning + objects (dog, airplane…)</span>
       </div>
       <div class="flow-step">
         <div class="flow-icon">3</div>
-        <strong>Найдём</strong>
-        <span>Покажем подходящие снимки</span>
+        <strong>Find</strong>
+        <span>See matching photos</span>
       </div>
       <div class="flow-toggle" id="flow-toggle-wrap" hidden>
-        <button type="button" id="flow-toggle">Свернуть подсказку</button>
+        <button type="button" id="flow-toggle">Hide guide</button>
       </div>
     </section>
 
     <section class="search-card">
       <form id="unified-form">
         <div class="search-row">
-          <input id="query-input" type="text" placeholder="Например: закат с airplane над горами" autocomplete="off" required>
-          <button type="submit" class="btn-primary" id="search-btn">Найти</button>
+          <input id="query-input" type="text" placeholder="For example: sunset with an airplane over mountains" autocomplete="off">
+          <button type="submit" class="btn-primary" id="search-btn">Search</button>
         </div>
       </form>
       <div class="options-row">
-        <label>Показать до
+        <label>Show up to
           <input id="search-k" type="number" min="1" max="50" value="10">
         </label>
-        <span id="chips-hint" class="chips-label">Объекты из запроса:</span>
+        <span id="chips-hint" class="chips-label">Objects from query:</span>
       </div>
       <div class="chips" id="active-chips"></div>
 
       <details class="keywords-panel" id="keywords-panel">
-        <summary>Все объекты (<span id="keyword-count">0</span>)</summary>
-        <input type="text" class="keywords-filter" id="keywords-filter" placeholder="Поиск по списку…">
+        <summary>All objects (<span id="keyword-count">0</span>)</summary>
+        <input type="text" class="keywords-filter" id="keywords-filter" placeholder="Filter list…">
         <div id="keyword-groups"></div>
       </details>
 
       <div class="progress-line" id="search-progress"></div>
-      <div class="status" id="search-status">Введите запрос и нажмите «Найти».</div>
+      <div class="status" id="search-status">Enter a query and select Search.</div>
       <div class="results-grid" id="results-grid"></div>
     </section>
 
     <section class="face-section">
-      <h2>Найти человека</h2>
-      <p class="hint">Отдельный поиск по лицам — загрузите фото человека или просмотрите людей в альбоме.</p>
+      <h2>Find a person</h2>
+      <p class="hint">Search by face: upload a photo of a person or browse people in the album.</p>
 
       <div class="face-gate" id="face-gate">
-        <p id="face-gate-text">Проверяем готовность поиска по лицам…</p>
+        <p id="face-gate-text">Checking face-search availability…</p>
         <div class="progress-bar"><span id="face-gate-bar"></span></div>
         <div class="field-row">
-          <button type="button" class="btn-primary" id="index-faces-btn">Индексировать лица</button>
+          <button type="button" class="btn-primary" id="index-faces-btn">Index faces</button>
         </div>
-        <p class="hint" id="face-gate-hint">Индексация идёт в фоне. Текстовый поиск выше работает параллельно.</p>
+        <p class="hint" id="face-gate-hint">Indexing runs in the background. Search above remains available.</p>
       </div>
 
       <div id="face-index-banner" class="hint" hidden></div>
 
       <div id="face-ready" hidden>
         <div class="sub-tabs">
-          <button type="button" class="sub-tab active" data-face-sub="photo">По фото</button>
-          <button type="button" class="sub-tab" data-face-sub="people">Люди в альбоме</button>
+          <button type="button" class="sub-tab active" data-face-sub="photo">By photo</button>
+          <button type="button" class="sub-tab" data-face-sub="people">People in album</button>
         </div>
 
         <div class="face-subview active" id="face-photo-view">
@@ -615,15 +615,15 @@
             <div class="file-box">
               <input id="face-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/bmp" required>
             </div>
-            <img id="face-preview" class="face-preview" alt="Превью">
+            <img id="face-preview" class="face-preview" alt="Preview">
             <div class="options-row">
-              <label>Строгость
+              <label>Threshold
                 <input id="face-threshold" type="number" min="0" max="1" step="0.05" value="0.4">
               </label>
-              <label>Показать до
+              <label>Show up to
                 <input id="face-k" type="number" min="1" max="50" value="10">
               </label>
-              <button type="submit" class="btn-primary">Найти этого человека</button>
+              <button type="submit" class="btn-primary">Find this person</button>
             </div>
           </form>
           <div class="progress-line" id="face-progress"></div>
@@ -633,26 +633,26 @@
 
         <div class="face-subview" id="face-people-view">
           <div class="field-row">
-            <button type="button" class="btn-secondary" id="cluster-people">Найти людей</button>
-            <button type="button" class="btn-secondary" id="regroup-people">Перегруппировать</button>
-            <button type="button" class="btn-secondary" id="merge-people">Объединить людей</button>
-            <button type="button" class="btn-primary" id="confirm-merge" hidden>Склеить выбранных</button>
-            <button type="button" class="btn-secondary" id="cancel-merge" hidden>Отмена</button>
+            <button type="button" class="btn-secondary" id="cluster-people">Find people</button>
+            <button type="button" class="btn-secondary" id="regroup-people">Regroup</button>
+            <button type="button" class="btn-secondary" id="merge-people">Merge people</button>
+            <button type="button" class="btn-primary" id="confirm-merge" hidden>Merge selected</button>
+            <button type="button" class="btn-secondary" id="cancel-merge" hidden>Cancel</button>
           </div>
           <p class="hint" id="people-mode-hint"></p>
           <div class="status" id="people-status"></div>
           <div id="person-detail" class="person-detail-card" hidden>
             <h3 id="person-detail-title"></h3>
             <div class="field-row">
-              <input id="person-name-input" type="text" placeholder="Имя человека">
-              <button type="button" class="btn-secondary" id="save-person-name">Сохранить</button>
-              <button type="button" class="btn-secondary" id="split-person-start">Разделить на нескольких</button>
+              <input id="person-name-input" type="text" placeholder="Person's name">
+              <button type="button" class="btn-secondary" id="save-person-name">Save</button>
+              <button type="button" class="btn-secondary" id="split-person-start">Split into people</button>
             </div>
             <div class="field-row" id="split-controls" hidden>
-              <span class="hint" id="split-hint">Назначьте фото группам — каждая группа станет отдельным человеком. Неназначенные останутся здесь.</span>
-              <button type="button" class="btn-secondary" id="split-add-group">Ещё группа</button>
-              <button type="button" class="btn-primary" id="split-confirm">Разделить</button>
-              <button type="button" class="btn-secondary" id="split-cancel">Отмена</button>
+              <span class="hint" id="split-hint">Assign photos to groups — each group becomes a separate person. Unassigned photos stay here.</span>
+              <button type="button" class="btn-secondary" id="split-add-group">Add group</button>
+              <button type="button" class="btn-primary" id="split-confirm">Split</button>
+              <button type="button" class="btn-secondary" id="split-cancel">Cancel</button>
             </div>
             <div class="thumb-grid" id="person-faces"></div>
           </div>
@@ -663,39 +663,39 @@
   </div>
 
   <div class="drawer-backdrop" id="drawer-backdrop"></div>
-  <aside class="drawer" id="settings-drawer" aria-label="Настройки">
+  <aside class="drawer" id="settings-drawer" aria-label="Settings">
     <div class="topbar" style="padding:0">
-      <h2>Настройки</h2>
-      <button type="button" class="icon-btn" id="close-settings" aria-label="Закрыть">✕</button>
+      <h2>Settings</h2>
+      <button type="button" class="icon-btn" id="close-settings" aria-label="Close">✕</button>
     </div>
-    <p class="hint">Каталоги для сканирования и фоновая переиндексация.</p>
-    <h3 style="margin:0;font-size:0.95rem">Каталоги</h3>
+    <p class="hint">Folders to scan and background reindexing.</p>
+    <h3 style="margin:0;font-size:0.95rem">Directories</h3>
     <div id="include-dirs" class="field-list"></div>
     <div class="field-row">
       <input id="new-include-dir" type="text" placeholder="/path/to/photos">
-      <button type="button" class="btn-secondary" id="add-include-dir">Добавить</button>
+      <button type="button" class="btn-secondary" id="add-include-dir">Add</button>
     </div>
-    <h3 style="margin:0;font-size:0.95rem">Исключения (glob)</h3>
+    <h3 style="margin:0;font-size:0.95rem">Exclusions (glob)</h3>
     <div id="ignore-globs" class="field-list"></div>
     <div class="field-row">
       <input id="new-ignore-glob" type="text" placeholder="**/thumbnails/**">
-      <button type="button" class="btn-secondary" id="add-ignore-glob">Добавить</button>
+      <button type="button" class="btn-secondary" id="add-ignore-glob">Add</button>
     </div>
-    <h3 style="margin:0;font-size:0.95rem">Каталог и индексы</h3>
-    <p class="hint">Сначала сверьте каталог, затем заполните нужные индексы. Поиск сам индексацию не запускает.</p>
+    <h3 style="margin:0;font-size:0.95rem">Catalogue and indexes</h3>
+    <p class="hint">Reconcile the catalogue first, then build the required indexes. Search does not start indexing automatically.</p>
     <div class="field-row">
-      <button type="button" class="btn-secondary" id="reconcile-catalog">Сверить каталог</button>
-      <button type="button" class="btn-secondary index-module" data-module="clip">Индексировать CLIP</button>
-      <button type="button" class="btn-secondary index-module" data-module="yolo">Индексировать YOLO</button>
-      <button type="button" class="btn-secondary index-module" data-module="faces">Индексировать Faces</button>
+      <button type="button" class="btn-secondary" id="reconcile-catalog">Reconcile catalogue</button>
+      <button type="button" class="btn-secondary index-module" data-module="clip">Index CLIP</button>
+      <button type="button" class="btn-secondary index-module" data-module="yolo">Index YOLO</button>
+      <button type="button" class="btn-secondary index-module" data-module="faces">Index faces</button>
     </div>
     <p id="index-action-status" class="hint">—</p>
-    <h3 style="margin:0;font-size:0.95rem">Фоновая переиндексация</h3>
+    <h3 style="margin:0;font-size:0.95rem">Background reindexing</h3>
     <label class="checkbox-row">
-      <label><input type="checkbox" id="background-enabled"> Включить</label>
+      <label><input type="checkbox" id="background-enabled"> Enable</label>
     </label>
     <div class="field-row">
-      <label>Интервал (дней)
+      <label>Interval (days)
         <input id="schedule-days" type="number" min="1" max="365" value="7">
       </label>
     </div>
@@ -705,20 +705,20 @@
       <label><input type="checkbox" value="faces" checked> Faces</label>
     </div>
     <p id="background-status" class="hint">—</p>
-    <button type="button" class="btn-primary" id="save-settings">Сохранить</button>
+    <button type="button" class="btn-primary" id="save-settings">Save</button>
     <div class="status" id="settings-status"></div>
   </aside>
 
   <div id="photo-lightbox" class="lightbox" hidden>
     <div class="lightbox-backdrop" id="lightbox-backdrop"></div>
     <div class="lightbox-content" role="dialog" aria-modal="true" aria-labelledby="lightbox-path">
-      <img id="lightbox-img" alt="Фото человека">
+      <img id="lightbox-img" alt="Person photo">
       <p class="lightbox-path" id="lightbox-path"></p>
       <div class="field-row" id="lightbox-split-row" hidden></div>
       <div class="field-row">
-        <button type="button" class="btn-secondary" id="lightbox-reveal">Открыть в проводнике</button>
-        <button type="button" class="btn-secondary" id="lightbox-copy">Копировать путь</button>
-        <button type="button" class="btn-secondary" id="lightbox-close">Закрыть</button>
+        <button type="button" class="btn-secondary" id="lightbox-reveal">Show in file manager</button>
+        <button type="button" class="btn-secondary" id="lightbox-copy">Copy path</button>
+        <button type="button" class="btn-secondary" id="lightbox-close">Close</button>
       </div>
     </div>
   </div>
@@ -815,7 +815,7 @@
       const autoSet = new Set(state.lastAutoLabels);
       els.activeChips.innerHTML = "";
       if (!labels.length) {
-        els.activeChips.innerHTML = '<span class="hint" style="font-size:0.82rem">Объекты не распознаны — будет только поиск по смыслу</span>';
+        els.activeChips.innerHTML = '<span class="hint" style="font-size:0.82rem">No objects detected — semantic search only</span>';
         return;
       }
       for (const label of labels) {
@@ -827,7 +827,7 @@
         chip.innerHTML = fromQuery
           ? `<span class="star">✦</span> ${escapeHtml(label)}`
           : escapeHtml(label);
-        chip.title = fromQuery ? "Подтянуто из запроса. Нажмите, чтобы отключить." : "Нажмите, чтобы убрать";
+        chip.title = fromQuery ? "Detected from the query. Select to disable." : "Select to remove";
         chip.addEventListener("click", () => toggleLabel(label, fromQuery));
         els.activeChips.appendChild(chip);
       }
@@ -882,7 +882,7 @@
 
     async function loadKeywords() {
       const response = await fetch("/keywords");
-      if (!response.ok) throw new Error("Не удалось загрузить список объектов");
+      if (!response.ok) throw new Error("Could not load the object list");
       const data = await response.json();
       state.allClasses = data.classes || [];
       state.groups = data.groups || {};
@@ -898,21 +898,21 @@
     function renderUnifiedResults(matches, labels) {
       els.resultsGrid.innerHTML = "";
       if (!matches.length) {
-        els.searchStatus.textContent = "Совпадений не найдено. Попробуйте другой запрос.";
+        els.searchStatus.textContent = "No matches found. Try another query.";
         return;
       }
-      const labelPart = labels.length ? ` · объекты: ${labels.join(", ")}` : "";
-      els.searchStatus.textContent = `Найдено ${matches.length} фото${labelPart}`;
+      const labelPart = labels.length ? ` · objects: ${labels.join(", ")}` : "";
+      els.searchStatus.textContent = `Found ${matches.length} photos${labelPart}`;
       for (const match of matches) {
         const card = document.createElement("article");
         card.className = "result-card";
         const badges = [];
-        if (match.sources.includes("semantic")) badges.push('<span class="badge">смысл</span>');
+        if (match.sources.includes("semantic")) badges.push('<span class="badge">semantic</span>');
         for (const lbl of Object.keys(match.yolo || {})) {
           badges.push(`<span class="badge object">${escapeHtml(lbl)}</span>`);
         }
         const scores = [];
-        if (match.clip_score != null) scores.push(`смысл ${match.clip_score.toFixed(3)}`);
+        if (match.clip_score != null) scores.push(`semantic ${match.clip_score.toFixed(3)}`);
         for (const [lbl, conf] of Object.entries(match.yolo || {})) {
           scores.push(`${lbl} ${conf.toFixed(3)}`);
         }
@@ -941,7 +941,7 @@
         const stats = data.modules[module];
         return `${module.toUpperCase()} ${stats.done}/${stats.total}`;
       });
-      els.searchStatus.textContent += ` · индекс неполный: ${details.join(", ")}`;
+      els.searchStatus.textContent += ` · incomplete index: ${details.join(", ")}`;
     }
 
     function setSearchProgress(text, active = false) {
@@ -957,7 +957,7 @@
       });
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
-        throw new Error(err.detail || `Ошибка ${response.status}`);
+        throw new Error(err.detail || `Error ${response.status}`);
       }
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
@@ -973,15 +973,15 @@
         for (const line of lines) {
           if (!line.trim()) continue;
           const event = JSON.parse(line);
-          if (event.stage === "error") throw new Error(event.detail || "Ошибка поиска");
+          if (event.stage === "error") throw new Error(event.detail || "Search error");
           if (event.stage === "reconcile" && event.status === "running") {
-            setSearchProgress("Сверяем каталог…", true);
+            setSearchProgress("Reconciling catalogue…", true);
           } else if (event.stage === "index_gap" && event.status === "running") {
-            const mod = event.module === "yolo" ? "объекты" : "смысл";
-            setSearchProgress(`Дозаполняем индекс (${mod})…`, true);
+            const mod = event.module === "yolo" ? "objects" : "semantic search";
+            setSearchProgress(`Completing the index (${mod})…`, true);
           } else if (event.stage === "search" && event.status === "running") {
-            const src = event.source === "object" ? `объект «${event.label}»` : "смысл";
-            setSearchProgress(`Ищем по ${src}…`, true);
+            const src = event.source === "object" ? `object “${event.label}”` : "meaning";
+            setSearchProgress(`Searching by ${src}…`, true);
           } else if (event.stage === "done") {
             finalEvent = event;
           }
@@ -994,21 +994,25 @@
     document.getElementById("unified-form").addEventListener("submit", async (event) => {
       event.preventDefault();
       const query = els.queryInput.value.trim();
-      if (!query) return;
+      const labels = activeLabels();
+      if (!query && !labels.length) {
+        els.searchStatus.className = "status error";
+        els.searchStatus.textContent = "Enter a query or select an object.";
+        return;
+      }
       const k = Number(document.getElementById("search-k").value);
       if (!Number.isInteger(k) || k < 1 || k > 50) {
         els.searchStatus.className = "status error";
-        els.searchStatus.textContent = "«Показать до» — целое число от 1 до 50.";
+        els.searchStatus.textContent = "Show up to must be a whole number from 1 to 50.";
         return;
       }
-      const labels = activeLabels();
       els.searchBtn.disabled = true;
       els.searchStatus.className = "status";
-      els.searchStatus.textContent = "Ищем…";
+      els.searchStatus.textContent = "Searching…";
       els.resultsGrid.innerHTML = "";
       try {
         const result = await consumeUnifiedStream({ query, labels, k });
-        if (!result) throw new Error("Пустой ответ сервера");
+        if (!result) throw new Error("Empty server response");
         renderUnifiedResults(result.matches || [], result.labels || labels);
         await appendIndexCoverageWarning(result.labels || labels);
         if (!state.hasSearched) {
@@ -1017,7 +1021,7 @@
         }
       } catch (error) {
         els.searchStatus.className = "status error";
-        els.searchStatus.textContent = error.message || "Ошибка поиска";
+        els.searchStatus.textContent = error.message || "Search error";
       } finally {
         els.searchBtn.disabled = false;
       }
@@ -1037,7 +1041,7 @@
 
     document.getElementById("flow-toggle").addEventListener("click", () => {
       const collapsed = els.flow.classList.toggle("collapsed");
-      document.getElementById("flow-toggle").textContent = collapsed ? "Показать подсказку" : "Свернуть подсказку";
+      document.getElementById("flow-toggle").textContent = collapsed ? "Show guide" : "Hide guide";
     });
 
     /* --- Settings drawer --- */
@@ -1118,7 +1122,7 @@
       const response = await fetch("/settings/scan", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       const status = document.getElementById("settings-status");
       status.className = response.ok ? "status" : "status error";
-      status.textContent = response.ok ? "Сохранено." : "Не удалось сохранить.";
+      status.textContent = response.ok ? "Saved." : "Could not save.";
       if (response.ok) refreshBackgroundStatus();
     });
 
@@ -1128,7 +1132,7 @@
       const statusEl = document.getElementById("index-action-status");
       while (true) {
         const response = await fetch("/index/status?stats=false");
-        if (!response.ok) throw new Error("Не удалось получить статус задачи");
+        if (!response.ok) throw new Error("Could not get task status");
         const data = await response.json();
         const candidates = [
           data.active_run,
@@ -1142,7 +1146,7 @@
         if (run) {
           statusEl.textContent = `${run.module}: ${run.phase}, ${run.progress_done} / ${run.progress_total} (${run.percent}%)`;
           if (run.status === "done") return run;
-          if (run.status === "failed") throw new Error(run.last_error || "Задача завершилась с ошибкой");
+          if (run.status === "failed") throw new Error(run.last_error || "Task failed");
         }
         await sleep(1000);
       }
@@ -1156,25 +1160,25 @@
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
         statusEl.className = "status error";
-        statusEl.textContent = data.detail || "Не удалось запустить задачу.";
+        statusEl.textContent = data.detail || "Could not start task.";
         return;
       }
       try {
         await pollIndexRun(data.run_id);
-        statusEl.textContent = "Готово.";
+        statusEl.textContent = "Done.";
         await ensureFacesIndexing();
       } catch (error) {
         statusEl.className = "status error";
-        statusEl.textContent = error.message || "Ошибка задачи.";
+        statusEl.textContent = error.message || "Task error.";
       }
     }
 
     document.getElementById("reconcile-catalog").addEventListener("click", () => {
-      startIndexAction("/index/reconcile", "Сверяем каталог…");
+      startIndexAction("/index/reconcile", "Reconciling catalogue…");
     });
     document.querySelectorAll(".index-module").forEach((button) => {
       button.addEventListener("click", () => {
-        startIndexAction(`/index/run/full/${button.dataset.module}`, `Запускаем ${button.dataset.module}…`);
+        startIndexAction(`/index/run/full/${button.dataset.module}`, `Starting ${button.dataset.module}…`);
       });
     });
 
@@ -1184,8 +1188,8 @@
       const data = await response.json();
       const bg = data.background || {};
       const el = document.getElementById("background-status");
-      if (!bg.enabled) { el.textContent = "Фоновая переиндексация отключена."; return; }
-      el.textContent = bg.next_run_at ? `Следующий прогон: ${bg.next_run_at}` : "Фоновая переиндексация включена.";
+      if (!bg.enabled) { el.textContent = "Background reindexing is disabled."; return; }
+      el.textContent = bg.next_run_at ? `Next run: ${bg.next_run_at}` : "Background reindexing is enabled.";
     }
 
     /* --- Face gate & indexing --- */
@@ -1222,7 +1226,7 @@
       els.faceGateBar.style.width = `${pct}%`;
       if (els.indexFacesBtn) {
         els.indexFacesBtn.disabled = indexing;
-        els.indexFacesBtn.textContent = indexing ? "Индексация…" : "Индексировать лица";
+        els.indexFacesBtn.textContent = indexing ? "Indexing…" : "Index faces";
       }
 
       if (readyData.ready) {
@@ -1231,7 +1235,7 @@
         if (indexing) {
           els.faceIndexBanner.hidden = false;
           els.faceIndexBanner.textContent =
-            `Доиндексируем лица: ${active.progress_done || done} / ${active.progress_total || total} (${pct}%)`;
+            `Completing face index: ${active.progress_done || done} / ${active.progress_total || total} (${pct}%)`;
           scheduleFacesPolling();
         } else {
           els.faceIndexBanner.hidden = true;
@@ -1245,28 +1249,28 @@
       els.faceIndexBanner.hidden = true;
       if (indexing) {
         els.faceGateText.textContent =
-          `Индексируем лица… ${active.progress_done || done} / ${active.progress_total || total} (${pct}%)`;
+          `Indexing faces… ${active.progress_done || done} / ${active.progress_total || total} (${pct}%)`;
         scheduleFacesPolling();
       } else if (latest?.status === "failed") {
-        els.faceGateText.textContent = `Ошибка индексации лиц: ${latest.last_error || "неизвестно"}`;
+        els.faceGateText.textContent = `Face indexing error: ${latest.last_error || "unknown"}`;
         stopFacesPolling();
       } else if (catalogEmpty) {
-        els.faceGateText.textContent = "Каталог пуст. Сначала сверьте каталог в настройках.";
+        els.faceGateText.textContent = "The catalogue is empty. Reconcile it first in Settings.";
         stopFacesPolling();
       } else {
-        els.faceGateText.textContent = `Индекс лиц не готов: ${done} / ${total}.`;
+        els.faceGateText.textContent = `Face index is not ready: ${done} / ${total}.`;
         stopFacesPolling();
       }
     }
 
     async function startFacesIndexing() {
       const statusEl = els.faceGateText;
-      statusEl.textContent = "Запускаем индексацию лиц…";
+      statusEl.textContent = "Starting face indexing…";
       if (els.indexFacesBtn) els.indexFacesBtn.disabled = true;
       const response = await fetch("/index/run/full/faces", { method: "POST" });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
-        statusEl.textContent = data.detail || "Не удалось запустить индексацию лиц.";
+        statusEl.textContent = data.detail || "Could not start face indexing.";
         if (els.indexFacesBtn) els.indexFacesBtn.disabled = false;
         return;
       }
@@ -1306,14 +1310,14 @@
       const faceResults = document.getElementById("face-results");
       faceResults.innerHTML = "";
       faceStatus.className = "status";
-      faceStatus.textContent = "Ищем…";
+      faceStatus.textContent = "Searching…";
       try {
         const formData = new FormData();
         formData.append("file", file);
         const embedResp = await fetch("/search/face/embed", { method: "POST", body: formData });
         const embedData = await embedResp.json().catch(() => ({}));
-        if (!embedResp.ok) throw new Error(embedData.detail || "Не удалось прочитать лицо");
-        faceProgress.textContent = "Ищем похожие лица…";
+        if (!embedResp.ok) throw new Error(embedData.detail || "Could not read face");
+        faceProgress.textContent = "Searching for similar faces…";
         const streamResp = await fetch("/search/face/stream", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1326,19 +1330,19 @@
         const matches = last.matches || [];
         faceProgress.textContent = "";
         if (!matches.length) {
-          faceStatus.textContent = "Совпадений не найдено. Попробуйте снизить строгость.";
+          faceStatus.textContent = "No matches found. Try lowering the threshold.";
           return;
         }
-        faceStatus.textContent = `Найдено ${matches.length} фото`;
+        faceStatus.textContent = `Found ${matches.length} photos`;
         for (const match of matches) {
           const card = document.createElement("article");
           card.className = "result-card";
-          card.innerHTML = `<img src="${imageSrcFromPath(match.path)}" alt="" loading="lazy"><div class="result-meta"><span>${escapeHtml(match.path.split("/").pop())}</span><span>сходство ${match.score.toFixed(3)}</span></div>`;
+          card.innerHTML = `<img src="${imageSrcFromPath(match.path)}" alt="" loading="lazy"><div class="result-meta"><span>${escapeHtml(match.path.split("/").pop())}</span><span>similarity ${match.score.toFixed(3)}</span></div>`;
           faceResults.appendChild(card);
         }
       } catch (error) {
         faceStatus.className = "status error";
-        faceStatus.textContent = error.message || "Ошибка";
+        faceStatus.textContent = error.message || "Error";
         faceProgress.textContent = "";
       }
     });
@@ -1355,11 +1359,11 @@
     function peopleHint() {
       const hint = document.getElementById("people-mode-hint");
       if (state.peopleMode === "merge") {
-        hint.textContent = "Режим объединения: отметьте дубликаты, затем подтвердите склейку. Клик по карточке включает или снимает выбор.";
+        hint.textContent = "Merge mode: select duplicates, then confirm the merge. Select a card to toggle it.";
       } else if (state.peopleMode === "split") {
-        hint.textContent = "Режим разделения: бейдж на фото назначает группу. Клик по фото открывает его целиком.";
+        hint.textContent = "Split mode: use the badge on a photo to assign a group. Select a photo to open it.";
       } else {
-        hint.textContent = "Клик по человеку показывает его фото сверху. Предыдущий выбор снимается.";
+        hint.textContent = "Select a person to see their photos above. The previous selection is cleared.";
       }
     }
 
@@ -1397,14 +1401,14 @@
       card.innerHTML = `
         <strong>${escapeHtml(person.display_name)}</strong>
         ${imgSrc ? `<img src="${imgSrc}" alt="">` : ""}
-        <span style="color:var(--muted)">${person.face_count} лиц</span>`;
+        <span style="color:var(--muted)">${person.face_count} faces</span>`;
       card.addEventListener("click", () => {
         if (state.peopleMode === "merge") {
           if (state.selectedPeople.has(person.id)) state.selectedPeople.delete(person.id);
           else state.selectedPeople.add(person.id);
           syncPeopleSelection();
           document.getElementById("people-status").textContent =
-            `Выбрано для склейки: ${state.selectedPeople.size}`;
+            `Selected for merging: ${state.selectedPeople.size}`;
           return;
         }
         if (state.peopleMode === "split") exitSplitMode();
@@ -1421,7 +1425,7 @@
       const grid = document.getElementById("people-grid");
       for (const person of data.people || []) grid.appendChild(renderPersonCard(person));
       peopleOffset += data.returned || 0;
-      document.getElementById("people-status").textContent = `Показано ${peopleOffset} из ${data.total || 0}`;
+      document.getElementById("people-status").textContent = `Showing ${peopleOffset} of ${data.total || 0}`;
       syncPeopleSelection();
     }
 
@@ -1449,7 +1453,7 @@
           badge.className = "thumb-badge" + (group ? " active" : "");
           badge.textContent = group ? String(group) : "+";
           if (group) badge.style.background = splitColor(group);
-          badge.title = "Назначить группу";
+          badge.title = "Assign group";
           badge.addEventListener("click", (event) => {
             event.stopPropagation();
             cycleFaceGroup(face.face_id);
@@ -1521,14 +1525,14 @@
       const none = document.createElement("button");
       none.type = "button";
       none.className = "btn-secondary";
-      none.textContent = "Без группы";
+      none.textContent = "No group";
       none.addEventListener("click", () => setFaceGroup(state.lightbox.face_id, 0));
       row.appendChild(none);
       for (let group = 1; group <= state.splitGroupCount; group++) {
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = "btn-secondary";
-        btn.textContent = current === group ? `Группа ${group} ✓` : `Группа ${group}`;
+        btn.textContent = current === group ? `Group ${group} ✓` : `Group ${group}`;
         btn.style.borderColor = splitColor(group);
         btn.addEventListener("click", () => setFaceGroup(state.lightbox.face_id, group));
         row.appendChild(btn);
@@ -1580,7 +1584,7 @@
       }
       const groups = [...grouped.keys()].sort((a, b) => a - b).map((key) => grouped.get(key));
       if (!groups.length) {
-        document.getElementById("people-status").textContent = "Назначьте хотя бы одно фото группе.";
+        document.getElementById("people-status").textContent = "Assign at least one photo to a group.";
         return;
       }
       const response = await fetch("/people/split", {
@@ -1590,7 +1594,7 @@
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
-        document.getElementById("people-status").textContent = data.detail || "Не удалось разделить.";
+        document.getElementById("people-status").textContent = data.detail || "Could not split.";
         return;
       }
       const stayOn = state.activePersonId;
@@ -1608,7 +1612,7 @@
       }
       state.activePersonId = null;
       document.getElementById("person-detail").hidden = true;
-      document.getElementById("people-status").textContent = "Люди разделены.";
+      document.getElementById("people-status").textContent = "People split.";
     });
 
     document.getElementById("merge-people").addEventListener("click", () => {
@@ -1618,7 +1622,7 @@
       state.activePersonId = null;
       setMergeUi(true);
       syncPeopleSelection();
-      document.getElementById("people-status").textContent = "Выберите дубликаты, затем подтвердите.";
+      document.getElementById("people-status").textContent = "Select duplicates, then confirm.";
     });
 
     document.getElementById("cancel-merge").addEventListener("click", () => {
@@ -1631,7 +1635,7 @@
     document.getElementById("confirm-merge").addEventListener("click", async () => {
       const ids = [...state.selectedPeople];
       if (ids.length < 2) {
-        document.getElementById("people-status").textContent = "Выберите минимум двух людей.";
+        document.getElementById("people-status").textContent = "Select at least two people.";
         return;
       }
       await fetch("/people/merge", {
@@ -1655,7 +1659,7 @@
       if (!path) return;
       try {
         await navigator.clipboard.writeText(path);
-        document.getElementById("people-status").textContent = "Путь скопирован.";
+        document.getElementById("people-status").textContent = "Path copied.";
       } catch {
         document.getElementById("people-status").textContent = path;
       }
@@ -1671,17 +1675,17 @@
       const path = data.path || state.lightbox.image_path || "";
       document.getElementById("lightbox-path").textContent = path;
       if (!response.ok) {
-        document.getElementById("people-status").textContent = data.detail || "Не удалось открыть проводник. Путь показан под фото.";
+        document.getElementById("people-status").textContent = data.detail || "Could not open file manager. The path is shown below the photo.";
         return;
       }
       document.getElementById("people-status").textContent = data.opened
-        ? "Папка открыта в проводнике."
-        : (path ? `Проводник не открылся. Путь: ${path}` : "Файл не найден.");
+        ? "Folder opened in file manager."
+        : (path ? `Could not open file manager. Path: ${path}` : "File not found.");
     });
 
     async function runCluster(regroup) {
       const response = await fetch(`/people/cluster?regroup=${regroup}`, { method: "POST" });
-      document.getElementById("people-status").textContent = response.ok ? "Кластеризация запущена…" : "Не удалось запустить.";
+      document.getElementById("people-status").textContent = response.ok ? "Clustering started…" : "Could not start.";
     }
     document.getElementById("cluster-people").addEventListener("click", () => runCluster(false));
     document.getElementById("regroup-people").addEventListener("click", () => runCluster(true));
@@ -1690,7 +1694,7 @@
     /* --- Boot --- */
     loadKeywords().catch(() => {
       els.searchStatus.className = "status error";
-      els.searchStatus.textContent = "Не удалось загрузить список объектов.";
+      els.searchStatus.textContent = "Could not load the object list.";
     });
     loadScanSettings();
     ensureFacesIndexing();

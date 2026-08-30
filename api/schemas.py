@@ -91,7 +91,7 @@ class FaceSearchResponse(BaseModel):
 
 
 class UnifiedSearchRequest(BaseModel):
-    query: str = Field(..., min_length=1, examples=["sunset with airplane"])
+    query: str = Field(default="", examples=["sunset with airplane"])
     labels: list[str] | None = Field(
         default=None,
         description="YOLO object labels; auto-detected from query when omitted",

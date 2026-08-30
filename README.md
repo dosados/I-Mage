@@ -22,6 +22,27 @@ I-Mage индексирует каталог изображений на ком�
 
 ---
 
+## Интерфейс
+
+<table>
+  <tr>
+    <td align="center"><strong>Semantic search</strong><br><img src="docs/examples/02-search-results.png" alt="Semantic search results for city skyline" width="420"></td>
+    <td align="center"><strong>Object search</strong><br><img src="docs/examples/03-object-search.png" alt="Object search with selected apple and banana classes" width="420"></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>Object picker</strong><br><img src="docs/examples/04-object-picker.png" alt="COCO object class picker" width="420"></td>
+    <td align="center"><strong>People</strong><br><img src="docs/examples/05-person-detail.png" alt="People clustering and management" width="420"></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>People gallery</strong><br><img src="docs/examples/06-people-gallery.png" alt="People gallery" width="420"></td>
+    <td align="center"><strong>Main screen</strong><br><img src="docs/examples/01-home.png" alt="I-Mage main screen" width="420"></td>
+  </tr>
+</table>
+
+[Open the complete screenshot set as PDF](docs/examples/ui-screenshots.pdf).
+
+---
+
 ## ML-стек
 
 Три ML-модуля отвечают за разные типы признаков и поиска. Они изолированы через единые абстракции `EmbeddingModel`, `ObjectsRetriever` и `FaceRecognizer`, поэтому конкретные реализации моделей можно заменять без изменения API и пайплайна индексации.
